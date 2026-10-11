@@ -395,3 +395,4 @@ begin
     grant execute on function public.submit_decision(text, text, text, jsonb) to service_role;
   end if;
 end $$;
+

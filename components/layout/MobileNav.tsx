@@ -44,8 +44,12 @@ export function MobileNav({
   }, [isOpen, onClose]);
 
   // Close automatically on route change
+  const prevPathnameRef = React.useRef(pathname);
   useEffect(() => {
-    onClose();
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      onClose();
+    }
   }, [pathname, onClose]);
 
   if (!isOpen) return null;
@@ -141,8 +145,8 @@ export function MobileNav({
             <button
               type="button"
               onClick={onLogout || (() => {})}
-              aria-label="Log out"
-              className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+              aria-label="Log out of application"
+              className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
             >
               <LogOut className="w-4 h-4" />
             </button>

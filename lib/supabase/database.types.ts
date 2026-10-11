@@ -454,5 +454,8 @@ export interface Database {
       decision_type: DecisionType;
       actor_type: ActorType;
     };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 }

@@ -24,6 +24,8 @@ export function AppShell({
   onLogout,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const handleCloseMobileNav = React.useCallback(() => setIsMobileNavOpen(false), []);
+  const handleOpenMobileNav = React.useCallback(() => setIsMobileNavOpen(true), []);
 
   return (
     <ToastProvider>
@@ -47,7 +49,7 @@ export function AppShell({
           {/* Mobile Drawer */}
           <MobileNav
             isOpen={isMobileNavOpen}
-            onClose={() => setIsMobileNavOpen(false)}
+            onClose={handleCloseMobileNav}
             workspaceName={workspaceName}
             userEmail={userEmail}
             userRole={userRole}
@@ -57,7 +59,7 @@ export function AppShell({
           {/* Main Layout Area */}
           <div className="flex flex-1 flex-col min-w-0">
             <Header
-              onOpenMobileNav={() => setIsMobileNavOpen(true)}
+              onOpenMobileNav={handleOpenMobileNav}
               workspaceName={workspaceName}
               pageTitle={pageTitle}
             />
