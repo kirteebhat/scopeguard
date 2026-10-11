@@ -2,18 +2,33 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ChangeRequestDetail } from "@/lib/data/change-requests";
 import { formatMinorToCurrency } from "@/lib/domain/money";
 import { ProposalPreviewModal } from "./ProposalPreviewModal";
+import { PublishedLinkDialog } from "./PublishedLinkDialog";
+import {
+  regenerateApprovalTokenAction,
+  reviseChangeRequestAction,
+  withdrawChangeRequestAction,
+} from "@/app/actions/change-requests";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Dialog, DialogFooter } from "@/components/ui/Dialog";
 import {
   Lock,
   DollarSign,
   Eye,
   ArrowLeft,
   History,
+  Link2,
+  Edit3,
+  XCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Calendar,
+  User,
 } from "lucide-react";
 
 interface ChangeRequestReadOnlyDetailProps {
@@ -23,9 +38,23 @@ interface ChangeRequestReadOnlyDetailProps {
 
 export function ChangeRequestReadOnlyDetail({
   changeRequest,
-  userRole: _userRole,
+  userRole,
 }: ChangeRequestReadOnlyDetailProps) {
+  const router = useRouter();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isRevising, setIsRevising] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+
+  const [showReviseConfirm, setShowReviseConfirm] = useState(false);
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [publishedLink, setPublishedLink] = useState<{
+    shareUrl: string;
+    expiresAt: string;
+  } | null>(null);
+
   const { project, versions } = changeRequest;
 
   const formattedCost = formatMinorToCurrency(changeRequest.costMinor, project.currency);
@@ -53,7 +82,7 @@ export function ChangeRequestReadOnlyDetail({
       case "pending_approval":
         return {
           title: "Proposal Locked for Approval",
-          text: "This proposal has been published and is currently awaiting client sign-off. To modify scope or pricing, it must be revised through the revision action (coming in Step 13), which revokes the active client token.",
+          text: "This proposal has been published and is currently awaiting client sign-off. To modify scope or pricing, use Revise Proposal to return it to draft and revoke the active client token.",
         };
       case "approved":
         return {
@@ -76,6 +105,71 @@ export function ChangeRequestReadOnlyDetail({
   };
 
   const banner = getBannerMessage();
+
+  const handleRegenerateLink = async () => {
+    setIsRegenerating(true);
+    setErrorMessage(null);
+    try {
+      const res = await regenerateApprovalTokenAction(changeRequest.id);
+      if (!res.success || !res.data) {
+        setErrorMessage(res.message || "Failed to regenerate approval link");
+        setIsRegenerating(false);
+        return;
+      }
+      setPublishedLink({
+        shareUrl: res.data.shareUrl,
+        expiresAt: res.data.expiresAt,
+      });
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to regenerate approval link";
+      setErrorMessage(errorMsg);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleReviseConfirm = async () => {
+    setIsRevising(true);
+    setErrorMessage(null);
+    try {
+      const res = await reviseChangeRequestAction(changeRequest.id);
+      if (!res.success) {
+        setErrorMessage(res.message || "Failed to revise proposal");
+        setIsRevising(false);
+        return;
+      }
+      setShowReviseConfirm(false);
+      router.refresh();
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to revise proposal";
+      setErrorMessage(errorMsg);
+    } finally {
+      setIsRevising(false);
+    }
+  };
+
+  const handleWithdrawConfirm = async () => {
+    setIsWithdrawing(true);
+    setErrorMessage(null);
+    try {
+      const res = await withdrawChangeRequestAction(changeRequest.id);
+      if (!res.success) {
+        setErrorMessage(res.message || "Failed to withdraw proposal");
+        setIsWithdrawing(false);
+        return;
+      }
+      setShowWithdrawConfirm(false);
+      router.refresh();
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Failed to withdraw proposal";
+      setErrorMessage(errorMsg);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -100,6 +194,23 @@ export function ChangeRequestReadOnlyDetail({
         </div>
       </div>
 
+      {/* Error alert if any */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between"
+        >
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-500 hover:text-rose-700 font-bold ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* State banner */}
       {banner && (
         <div
@@ -114,9 +225,72 @@ export function ChangeRequestReadOnlyDetail({
         </div>
       )}
 
+      {/* Workflow Action Bar (governed by state machine) */}
+      {changeRequest.status === "pending_approval" && (
+        <div
+          className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          id="pendingWorkflowBar"
+        >
+          <div>
+            <h3 className="text-xs font-bold text-slate-900">
+              Proposal Decision Pending (Version {changeRequest.currentVersion || 1})
+            </h3>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Client approval link is active. You can generate a fresh link or revert to draft.
+            </p>
+          </div>
+
+          {userRole === "member" ? (
+            <span className="text-xs text-slate-400 italic">
+              Only workspace owners and managers can revise, withdraw, or regenerate links.
+            </span>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRegenerateLink}
+                isLoading={isRegenerating}
+                disabled={isRegenerating || isRevising || isWithdrawing}
+                leftIcon={<Link2 className="w-3.5 h-3.5 text-indigo-600" />}
+                id="regenerateApprovalLinkButton"
+              >
+                Revoke & Generate New Link
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowReviseConfirm(true)}
+                disabled={isRegenerating || isRevising || isWithdrawing}
+                leftIcon={<Edit3 className="w-3.5 h-3.5 text-amber-600" />}
+                id="reviseProposalButton"
+              >
+                Revise Proposal
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWithdrawConfirm(true)}
+                disabled={isRegenerating || isRevising || isWithdrawing}
+                leftIcon={<XCircle className="w-3.5 h-3.5 text-rose-600" />}
+                className="hover:text-rose-700 hover:border-rose-300"
+                id="withdrawProposalButton"
+              >
+                Withdraw Proposal
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Scope Details */}
+        {/* Left Column: Scope Details & Version History */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -173,48 +347,89 @@ export function ChangeRequestReadOnlyDetail({
             </CardContent>
           </Card>
 
-          {/* Immutable Versions Snapshots */}
+          {/* Immutable Versions Snapshots & History Timeline */}
           {versions.length > 0 && (
-            <Card>
+            <Card id="versionHistoryCard">
               <CardHeader>
                 <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                   <History className="w-4 h-4 text-indigo-600" />
-                  Version History & Immutable Snapshots
+                  Version History Timeline
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {versions.map((ver) => (
-                  <div
-                    key={ver.id}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">Version {ver.versionNumber}</span>
-                        <Badge variant="default" className="text-[10px]">
-                          Snapshot
-                        </Badge>
+                {versions.map((ver) => {
+                  const isCurrent = ver.versionNumber === changeRequest.currentVersion;
+                  const isPendingVer =
+                    changeRequest.status === "pending_approval" && isCurrent;
+
+                  return (
+                    <div
+                      key={ver.id}
+                      className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900">
+                            Version {ver.versionNumber}
+                          </span>
+
+                          {ver.decision === "approved" && (
+                            <Badge variant="approved">
+                              Approved {ver.decidedByActor ? `by ${ver.decidedByActor}` : ""}
+                            </Badge>
+                          )}
+                          {ver.decision === "rejected" && (
+                            <Badge variant="rejected">
+                              Rejected {ver.decidedByActor ? `by ${ver.decidedByActor}` : ""}
+                            </Badge>
+                          )}
+                          {!ver.decision && isPendingVer && (
+                            <Badge variant="pending">Awaiting Client Sign-off</Badge>
+                          )}
+                          {!ver.decision && !isPendingVer && (
+                            <Badge variant="default" className="text-slate-500 bg-slate-200">
+                              Superseded / Revoked
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Published {new Date(ver.createdAt).toLocaleDateString()}
+                          </span>
+                          {ver.publisherName && (
+                            <span className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              By {ver.publisherName}
+                            </span>
+                          )}
+                          {ver.decidedAt && (
+                            <span className="flex items-center gap-1 text-slate-600">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Decided {new Date(ver.decidedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-[11px] text-slate-500 mt-0.5 block">
-                        Published on {new Date(ver.createdAt).toLocaleDateString()}
-                      </span>
+
+                      <div className="text-left sm:text-right shrink-0">
+                        <span className="font-bold text-slate-900 block text-sm">
+                          {formatMinorToCurrency(ver.costMinor, ver.currency)}
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          {ver.proposedDeadline ? `Due ${ver.proposedDeadline}` : "No deadline shift"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-bold text-slate-900 block">
-                        {formatMinorToCurrency(ver.costMinor, ver.currency)}
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        {ver.proposedDeadline ? `Due ${ver.proposedDeadline}` : "No deadline shift"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Right Column: Commercial & Project Overview */}
+        {/* Right Column: Agreed Terms Summary */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -282,6 +497,95 @@ export function ChangeRequestReadOnlyDetail({
         proposedDeadline={changeRequest.proposedDeadline}
         deltaDays={0}
       />
+
+      {/* Regenerated / Fresh Approval Link Dialog */}
+      {publishedLink && (
+        <PublishedLinkDialog
+          isOpen={true}
+          onClose={() => setPublishedLink(null)}
+          shareUrl={publishedLink.shareUrl}
+          expiresAt={publishedLink.expiresAt}
+          versionNumber={changeRequest.currentVersion || undefined}
+          title="New Approval Link Generated"
+        />
+      )}
+
+      {/* Revise Confirmation Dialog */}
+      <Dialog
+        isOpen={showReviseConfirm}
+        onClose={() => setShowReviseConfirm(false)}
+        title="Revise Proposal?"
+        description="Reverting this proposal to draft will revoke the active client approval link."
+      >
+        <div className="space-y-3 text-xs text-slate-600">
+          <p>
+            Any client attempting to access the existing sign-off link will see that it has
+            been revoked.
+          </p>
+          <p>
+            When you complete your edits and publish again, ScopeGuard will increment the
+            version counter to <strong>Version {(changeRequest.currentVersion || 1) + 1}</strong> and
+            generate a fresh approval link.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowReviseConfirm(false)}
+            disabled={isRevising}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleReviseConfirm}
+            isLoading={isRevising}
+            id="confirmReviseButton"
+          >
+            Confirm Revision
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Withdraw Confirmation Dialog */}
+      <Dialog
+        isOpen={showWithdrawConfirm}
+        onClose={() => setShowWithdrawConfirm(false)}
+        title="Withdraw Proposal?"
+        description="Withdrawing is a terminal action and cannot be reversed."
+      >
+        <div className="space-y-3 text-xs text-slate-600">
+          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-900 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <span>
+              All active client links will be permanently revoked immediately. This proposal
+              will be marked as withdrawn and cannot be reopened.
+            </span>
+          </div>
+          <p>Are you sure you want to withdraw this change proposal?</p>
+        </div>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowWithdrawConfirm(false)}
+            disabled={isWithdrawing}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={handleWithdrawConfirm}
+            isLoading={isWithdrawing}
+            id="confirmWithdrawButton"
+          >
+            Withdraw Proposal
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   );
 }

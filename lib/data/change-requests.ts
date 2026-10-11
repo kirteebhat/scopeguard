@@ -1,4 +1,4 @@
-import { getWorkspaceContextOrRedirect } from "./auth-context";
+import { getWorkspaceContextOrRedirect, requireRole } from "./auth-context";
 import { getProjectById } from "./projects";
 import { getProjectDeliverables, type DeliverableItem } from "./deliverables";
 import { logActivity } from "./activity";
@@ -39,8 +39,12 @@ export interface ChangeRequestVersionItem {
   currency: string;
   proposedDeadline: string | null;
   publishedBy: string | null;
+  publisherName?: string | null;
   createdAt: string;
   snapshot: Record<string, unknown>;
+  decision?: "approved" | "rejected" | null;
+  decidedAt?: string | null;
+  decidedByActor?: string | null;
 }
 
 export interface ChangeRequestDetail extends ChangeRequestItem {
@@ -96,14 +100,65 @@ interface RawChangeRequestRow {
   created_by: string | null;
 }
 
-// Fallback store for environments where migration 2 has not yet been applied to remote schema cache
+export interface RawVersionRow {
+  id: string;
+  change_request_id: string;
+  version_number: number;
+  title: string;
+  description: string;
+  pricing_method: "hourly" | "fixed";
+  cost_minor: number | string;
+  currency: string;
+  proposed_deadline: string | null;
+  published_by: string | null;
+  publisher_name?: string | null;
+  created_at: string;
+  snapshot: Record<string, unknown>;
+}
+
+export interface RawTokenRow {
+  id: string;
+  version_id: string;
+  token_hash: string;
+  expires_at: string;
+  revoked_at: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface RawApprovalRow {
+  id: string;
+  version_id: string;
+  decision: "approved" | "rejected";
+  decided_at: string;
+  decision_actor_type: string;
+  actor_name: string;
+  audit_metadata: Record<string, unknown>;
+}
+
+// Fallback stores for environments where migration 2 has not yet been applied to remote schema cache
 const globalWithStore = globalThis as unknown as {
   __scopeguard_fallback_cr_store?: Map<string, RawChangeRequestRow>;
+  __scopeguard_fallback_version_store?: Map<string, RawVersionRow>;
+  __scopeguard_fallback_token_store?: Map<string, RawTokenRow>;
+  __scopeguard_fallback_approval_store?: Map<string, RawApprovalRow>;
 };
 if (!globalWithStore.__scopeguard_fallback_cr_store) {
   globalWithStore.__scopeguard_fallback_cr_store = new Map<string, RawChangeRequestRow>();
 }
+if (!globalWithStore.__scopeguard_fallback_version_store) {
+  globalWithStore.__scopeguard_fallback_version_store = new Map<string, RawVersionRow>();
+}
+if (!globalWithStore.__scopeguard_fallback_token_store) {
+  globalWithStore.__scopeguard_fallback_token_store = new Map<string, RawTokenRow>();
+}
+if (!globalWithStore.__scopeguard_fallback_approval_store) {
+  globalWithStore.__scopeguard_fallback_approval_store = new Map<string, RawApprovalRow>();
+}
 const fallbackStore = globalWithStore.__scopeguard_fallback_cr_store;
+const fallbackVersionStore = globalWithStore.__scopeguard_fallback_version_store;
+const fallbackTokenStore = globalWithStore.__scopeguard_fallback_token_store;
+const fallbackApprovalStore = globalWithStore.__scopeguard_fallback_approval_store;
 
 /**
  * Maps a raw database row to typed ChangeRequestItem.
@@ -218,28 +273,75 @@ export async function getChangeRequestById(
   const deliverableMap = new Map<string, string>(deliverables.map((d) => [d.id, d.title]));
 
   // Fetch immutable version history
-  const { data: rawVersions } = await adminClient
+  let rawVersions: RawVersionRow[] = [];
+  const { data: dbVersions, error: versionErr } = await adminClient
     .from("change_request_versions")
     .select("*")
     .eq("change_request_id", changeRequestId)
     .order("version_number", { ascending: true });
 
-  interface RawVersionRow {
-    id: string;
-    version_number: number;
-    title: string;
-    description: string;
-    pricing_method: "hourly" | "fixed";
-    cost_minor: number | string;
-    currency: string;
-    proposed_deadline: string | null;
-    published_by: string | null;
-    created_at: string;
-    snapshot: Record<string, unknown>;
+  if (versionErr) {
+    if (versionErr.message.includes("schema cache") || versionErr.code === "PGRST205") {
+      rawVersions = Array.from(fallbackVersionStore.values()).filter(
+        (v) => v.change_request_id === changeRequestId
+      );
+    }
+  } else if (dbVersions) {
+    rawVersions = dbVersions as unknown as RawVersionRow[];
   }
 
-  const versions: ChangeRequestVersionItem[] = ((rawVersions || []) as unknown as RawVersionRow[]).map(
-    (v) => ({
+  // Merge any fallback versions not in dbVersions
+  const dbVerIds = new Set(rawVersions.map((v) => v.id));
+  const additionalFbVersions = Array.from(fallbackVersionStore.values()).filter(
+    (v) => v.change_request_id === changeRequestId && !dbVerIds.has(v.id)
+  );
+  rawVersions = [...rawVersions, ...additionalFbVersions].sort(
+    (a, b) => a.version_number - b.version_number
+  );
+
+  // Fetch approvals for these versions
+  const versionIds = rawVersions.map((v) => v.id);
+  const approvalsMap = new Map<string, RawApprovalRow>();
+
+  if (versionIds.length > 0) {
+    const { data: dbApprovals } = await adminClient
+      .from("approvals")
+      .select("*")
+      .in("version_id", versionIds);
+
+    if (dbApprovals) {
+      for (const a of dbApprovals as unknown as RawApprovalRow[]) {
+        approvalsMap.set(a.version_id, a);
+      }
+    }
+    // Also check fallbackApprovalStore
+    for (const vId of versionIds) {
+      if (!approvalsMap.has(vId) && fallbackApprovalStore.has(vId)) {
+        approvalsMap.set(vId, fallbackApprovalStore.get(vId)!);
+      }
+    }
+  }
+
+  // Fetch profile names for publishers
+  const publisherIds = Array.from(
+    new Set(rawVersions.map((v) => v.published_by).filter(Boolean))
+  ) as string[];
+  const publisherMap = new Map<string, string>();
+  if (publisherIds.length > 0) {
+    const { data: profiles } = await adminClient
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", publisherIds);
+    if (profiles) {
+      for (const p of profiles) {
+        if (p.full_name) publisherMap.set(p.id, p.full_name);
+      }
+    }
+  }
+
+  const versions: ChangeRequestVersionItem[] = rawVersions.map((v) => {
+    const approval = approvalsMap.get(v.id);
+    return {
       id: v.id,
       versionNumber: v.version_number,
       title: v.title,
@@ -249,10 +351,17 @@ export async function getChangeRequestById(
       currency: v.currency,
       proposedDeadline: v.proposed_deadline,
       publishedBy: v.published_by,
+      publisherName:
+        (v.published_by ? publisherMap.get(v.published_by) : null) ||
+        v.publisher_name ||
+        null,
       createdAt: v.created_at,
       snapshot: v.snapshot || {},
-    })
-  );
+      decision: approval?.decision || null,
+      decidedAt: approval?.decided_at || null,
+      decidedByActor: approval?.actor_name || null,
+    };
+  });
 
   return {
     ...mapChangeRequestRow(row, deliverableMap),
@@ -501,3 +610,434 @@ export async function updateChangeRequestDraft(
     },
   });
 }
+
+interface CustomRpcClient {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
+}
+
+type ChangeRequestRowUpdatePayload = Database["public"]["Tables"]["change_requests"]["Update"];
+
+function isSchemaOrFunctionMissing(error: { message?: string; code?: string } | null): boolean {
+  if (!error) return false;
+  const msg = (error.message || "").toLowerCase();
+  const code = error.code || "";
+  return (
+    msg.includes("schema cache") ||
+    msg.includes("does not exist") ||
+    msg.includes("could not find") ||
+    msg.includes("function") ||
+    code === "PGRST202" ||
+    code === "PGRST205" ||
+    code === "42883" ||
+    code === "42P01"
+  );
+}
+
+/**
+ * Publishes a draft change request, freezing it into immutable version snapshot N,
+ * storing the hashed approval token, setting status to 'pending_approval',
+ * and logging the audit activity.
+ *
+ * Enforces:
+ * - Only workspace owners and managers can publish proposals.
+ * - State machine rule: only 'draft' status can be published.
+ */
+export async function publishChangeRequest(
+  changeRequestId: string,
+  tokenHash: string,
+  expiresAt: string
+): Promise<{ versionId: string; versionNumber: number }> {
+  const { user, workspace, supabase } = await requireRole(["owner", "manager"]);
+  const existing = await getChangeRequestById(changeRequestId);
+
+  if (existing.status !== "draft") {
+    throw new Error(
+      `Illegal state transition: Only drafts can be published (current status: '${existing.status}').`
+    );
+  }
+
+  // Attempt real database RPC call
+  const { data: rpcData, error: rpcErr } = await (supabase as unknown as CustomRpcClient).rpc(
+    "publish_change_request",
+    {
+      p_request_id: changeRequestId,
+      p_token_hash: tokenHash,
+      p_expires_at: expiresAt,
+    }
+  );
+
+  if (!rpcErr && rpcData) {
+    const res = rpcData as { version_id: string; version_number: number };
+    return {
+      versionId: res.version_id,
+      versionNumber: res.version_number,
+    };
+  }
+
+  // If real RPC failed due to missing schema cache / function not found, fall back:
+  if (rpcErr && !isSchemaOrFunctionMissing(rpcErr)) {
+    throw new Error(`Failed to publish change request: ${rpcErr.message}`);
+  }
+
+  // --- Fallback Store Implementation ---
+  const existingVersions = Array.from(fallbackVersionStore.values()).filter(
+    (v) => v.change_request_id === changeRequestId
+  );
+  const nextVersion = existingVersions.length + 1;
+  const versionId = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  let deliverableTitle: string | null = null;
+  if (existing.affectedDeliverableId) {
+    const deliv = existing.deliverables.find(
+      (d) => d.id === existing.affectedDeliverableId
+    );
+    deliverableTitle = deliv ? deliv.title : null;
+  }
+
+  const snapshot: Record<string, unknown> = {
+    version_number: nextVersion,
+    title: existing.title,
+    description: existing.description,
+    reason: existing.reason,
+    pricing_method: existing.pricingMethod,
+    estimated_hours: existing.estimatedHours,
+    hourly_rate_minor: existing.hourlyRateMinor,
+    cost_minor: existing.costMinor,
+    currency: existing.project.currency,
+    proposed_deadline: existing.proposedDeadline,
+    original_contract: {
+      project_name: existing.project.name,
+      client_name: existing.project.clientName,
+      budget_minor: existing.project.budgetMinor,
+      original_deadline: existing.project.originalDeadline,
+    },
+    affected_deliverable: existing.affectedDeliverableId
+      ? { id: existing.affectedDeliverableId, title: deliverableTitle }
+      : null,
+    disclaimer:
+      "This proposal represents an estimated scope modification. Approving will update project baseline parameters.",
+  };
+
+  fallbackVersionStore.set(versionId, {
+    id: versionId,
+    change_request_id: changeRequestId,
+    version_number: nextVersion,
+    title: existing.title,
+    description: existing.description,
+    pricing_method: existing.pricingMethod,
+    cost_minor: existing.costMinor,
+    currency: existing.project.currency,
+    proposed_deadline: existing.proposedDeadline,
+    published_by: user.id,
+    publisher_name: user.fullName || user.email,
+    created_at: now,
+    snapshot,
+  });
+
+  const tokenId = crypto.randomUUID();
+  fallbackTokenStore.set(tokenId, {
+    id: tokenId,
+    version_id: versionId,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    revoked_at: null,
+    created_at: now,
+    created_by: user.id,
+  });
+
+  const fbCr = fallbackStore.get(changeRequestId);
+  if (fbCr) {
+    fallbackStore.set(changeRequestId, {
+      ...fbCr,
+      status: "pending_approval",
+      current_version: nextVersion,
+      updated_at: now,
+    });
+  }
+
+  const adminClient = createServiceRoleClient();
+  await adminClient
+    .from("change_requests")
+    .update({
+      status: "pending_approval",
+      current_version: nextVersion,
+      updated_at: now,
+    } as unknown as ChangeRequestRowUpdatePayload)
+    .eq("id", changeRequestId);
+
+  await logActivity({
+    workspaceId: workspace.id,
+    actorType: "user",
+    actorId: user.id,
+    actorName: user.fullName || user.email,
+    entityType: "change_request",
+    entityId: changeRequestId,
+    action: "change_request_published",
+    metadata: {
+      version_number: nextVersion,
+      version_id: versionId,
+      title: existing.title,
+      cost_minor: existing.costMinor,
+      currency: existing.project.currency,
+    },
+  });
+
+  return {
+    versionId,
+    versionNumber: nextVersion,
+  };
+}
+
+/**
+ * Revokes any active approval token for the current pending version and stores
+ * a new hashed token. Version and draft status remain unchanged.
+ *
+ * Enforces:
+ * - Only workspace owners and managers can regenerate tokens.
+ * - State machine rule: can only regenerate tokens for pending_approval requests.
+ */
+export async function regenerateApprovalToken(
+  changeRequestId: string,
+  tokenHash: string,
+  expiresAt: string
+): Promise<{ success: boolean }> {
+  const { user, workspace, supabase } = await requireRole(["owner", "manager"]);
+  const existing = await getChangeRequestById(changeRequestId);
+
+  if (existing.status !== "pending_approval") {
+    throw new Error(
+      `Illegal state transition: Can only regenerate approval tokens for pending proposals (current status: '${existing.status}').`
+    );
+  }
+
+  const { data: rpcData, error: rpcErr } = await (supabase as unknown as CustomRpcClient).rpc(
+    "regenerate_approval_token",
+    {
+      p_request_id: changeRequestId,
+      p_token_hash: tokenHash,
+      p_expires_at: expiresAt,
+    }
+  );
+
+  if (!rpcErr && rpcData) {
+    return { success: true };
+  }
+
+  if (rpcErr && !isSchemaOrFunctionMissing(rpcErr)) {
+    throw new Error(`Failed to regenerate approval token: ${rpcErr.message}`);
+  }
+
+  // Fallback
+  const activeVersion = existing.versions.find(
+    (v) => v.versionNumber === existing.currentVersion
+  );
+  if (!activeVersion) {
+    throw new Error(
+      `Active version record not found for change request ${changeRequestId}`
+    );
+  }
+
+  const now = new Date().toISOString();
+  for (const [tId, token] of fallbackTokenStore.entries()) {
+    if (token.version_id === activeVersion.id && !token.revoked_at) {
+      fallbackTokenStore.set(tId, {
+        ...token,
+        revoked_at: now,
+      });
+    }
+  }
+
+  const newTId = crypto.randomUUID();
+  fallbackTokenStore.set(newTId, {
+    id: newTId,
+    version_id: activeVersion.id,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    revoked_at: null,
+    created_at: now,
+    created_by: user.id,
+  });
+
+  await logActivity({
+    workspaceId: workspace.id,
+    actorType: "user",
+    actorId: user.id,
+    actorName: user.fullName || user.email,
+    entityType: "change_request",
+    entityId: changeRequestId,
+    action: "approval_token_regenerated",
+    metadata: {
+      version_number: existing.currentVersion,
+      version_id: activeVersion.id,
+    },
+  });
+
+  return { success: true };
+}
+
+/**
+ * Revises a pending change request: revokes the active token and returns the status to 'draft'.
+ * The next publish action will create version snapshot N+1.
+ *
+ * Enforces:
+ * - Only workspace owners and managers can revise proposals.
+ * - State machine rule: only 'pending_approval' proposals can be revised.
+ */
+export async function reviseChangeRequest(
+  changeRequestId: string
+): Promise<{ success: boolean; status: "draft" }> {
+  const { user, workspace, supabase } = await requireRole(["owner", "manager"]);
+  const existing = await getChangeRequestById(changeRequestId);
+
+  if (existing.status !== "pending_approval") {
+    throw new Error(
+      `Illegal state transition: Only pending proposals can be revised (current status: '${existing.status}').`
+    );
+  }
+
+  const { data: rpcData, error: rpcErr } = await (supabase as unknown as CustomRpcClient).rpc(
+    "revise_change_request",
+    { p_request_id: changeRequestId }
+  );
+
+  if (!rpcErr && rpcData) {
+    return { success: true, status: "draft" };
+  }
+
+  if (rpcErr && !isSchemaOrFunctionMissing(rpcErr)) {
+    throw new Error(`Failed to revise change request: ${rpcErr.message}`);
+  }
+
+  // Fallback
+  const activeVersion = existing.versions.find(
+    (v) => v.versionNumber === existing.currentVersion
+  );
+  const now = new Date().toISOString();
+
+  if (activeVersion) {
+    for (const [tId, token] of fallbackTokenStore.entries()) {
+      if (token.version_id === activeVersion.id && !token.revoked_at) {
+        fallbackTokenStore.set(tId, {
+          ...token,
+          revoked_at: now,
+        });
+      }
+    }
+  }
+
+  const fbCr = fallbackStore.get(changeRequestId);
+  if (fbCr) {
+    fallbackStore.set(changeRequestId, {
+      ...fbCr,
+      status: "draft",
+      updated_at: now,
+    });
+  }
+
+  const adminClient = createServiceRoleClient();
+  await adminClient
+    .from("change_requests")
+    .update({ status: "draft", updated_at: now } as unknown as ChangeRequestRowUpdatePayload)
+    .eq("id", changeRequestId);
+
+  await logActivity({
+    workspaceId: workspace.id,
+    actorType: "user",
+    actorId: user.id,
+    actorName: user.fullName || user.email,
+    entityType: "change_request",
+    entityId: changeRequestId,
+    action: "change_request_revised",
+    metadata: {
+      revised_version: existing.currentVersion,
+    },
+  });
+
+  return { success: true, status: "draft" };
+}
+
+/**
+ * Withdraws a pending change request: revokes the active token and sets status to 'withdrawn'.
+ * Status is terminal.
+ *
+ * Enforces:
+ * - Only workspace owners and managers can withdraw proposals.
+ * - State machine rule: only 'pending_approval' proposals can be withdrawn.
+ */
+export async function withdrawChangeRequest(
+  changeRequestId: string
+): Promise<{ success: boolean; status: "withdrawn" }> {
+  const { user, workspace, supabase } = await requireRole(["owner", "manager"]);
+  const existing = await getChangeRequestById(changeRequestId);
+
+  if (existing.status !== "pending_approval") {
+    throw new Error(
+      `Illegal state transition: Only pending proposals can be withdrawn (current status: '${existing.status}').`
+    );
+  }
+
+  const { data: rpcData, error: rpcErr } = await (supabase as unknown as CustomRpcClient).rpc(
+    "withdraw_change_request",
+    { p_request_id: changeRequestId }
+  );
+
+  if (!rpcErr && rpcData) {
+    return { success: true, status: "withdrawn" };
+  }
+
+  if (rpcErr && !isSchemaOrFunctionMissing(rpcErr)) {
+    throw new Error(`Failed to withdraw change request: ${rpcErr.message}`);
+  }
+
+  // Fallback
+  const activeVersion = existing.versions.find(
+    (v) => v.versionNumber === existing.currentVersion
+  );
+  const now = new Date().toISOString();
+
+  if (activeVersion) {
+    for (const [tId, token] of fallbackTokenStore.entries()) {
+      if (token.version_id === activeVersion.id && !token.revoked_at) {
+        fallbackTokenStore.set(tId, {
+          ...token,
+          revoked_at: now,
+        });
+      }
+    }
+  }
+
+  const fbCr = fallbackStore.get(changeRequestId);
+  if (fbCr) {
+    fallbackStore.set(changeRequestId, {
+      ...fbCr,
+      status: "withdrawn",
+      updated_at: now,
+    });
+  }
+
+  const adminClient = createServiceRoleClient();
+  await adminClient
+    .from("change_requests")
+    .update({ status: "withdrawn", updated_at: now } as unknown as ChangeRequestRowUpdatePayload)
+    .eq("id", changeRequestId);
+
+  await logActivity({
+    workspaceId: workspace.id,
+    actorType: "user",
+    actorId: user.id,
+    actorName: user.fullName || user.email,
+    entityType: "change_request",
+    entityId: changeRequestId,
+    action: "change_request_withdrawn",
+    metadata: {
+      withdrawn_version: existing.currentVersion,
+    },
+  });
+
+  return { success: true, status: "withdrawn" };
+}
+

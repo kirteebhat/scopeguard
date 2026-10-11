@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +11,9 @@ import {
 import {
   createChangeRequestDraftAction,
   updateChangeRequestDraftAction,
+  publishChangeRequestAction,
 } from "@/app/actions/change-requests";
+import { PublishedLinkDialog } from "./PublishedLinkDialog";
 import type { ProjectDetail } from "@/lib/data/projects";
 import type { DeliverableItem } from "@/lib/data/deliverables";
 import type { ChangeRequestItem } from "@/lib/data/change-requests";
@@ -69,9 +72,47 @@ export function ChangeRequestForm({
   initialData,
   isNew = false,
 }: ChangeRequestFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isPublishing, setIsPublishing] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; isError: boolean } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [publishedLink, setPublishedLink] = useState<{
+    shareUrl: string;
+    expiresAt: string;
+    versionNumber: number;
+  } | null>(null);
+
+  const handleSubmitForApproval = async () => {
+    if (!initialData?.id) return;
+    setIsPublishing(true);
+    setFeedback(null);
+
+    try {
+      const res = await publishChangeRequestAction(initialData.id);
+      if (!res.success || !res.data) {
+        setFeedback({ text: res.message || "Failed to publish proposal", isError: true });
+        setIsPublishing(false);
+        return;
+      }
+
+      setPublishedLink({
+        shareUrl: res.data.shareUrl,
+        expiresAt: res.data.expiresAt,
+        versionNumber: res.data.versionNumber,
+      });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Failed to publish proposal";
+      setFeedback({ text: errorMsg, isError: true });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleClosePublishedDialog = () => {
+    setPublishedLink(null);
+    router.refresh();
+  };
 
   // Form initialization
   const defaultHours = initialData?.estimatedHours
@@ -603,21 +644,41 @@ export function ChangeRequestForm({
                   Preview Client Proposal
                 </Button>
 
-                <div className="pt-2 border-t border-slate-100">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full opacity-60 cursor-not-allowed"
-                    disabled={true}
-                    leftIcon={<Send className="w-4 h-4" />}
-                    id="submitForApprovalButton"
-                  >
-                    Submit for Approval
-                  </Button>
-                  <p className="text-[11px] text-slate-400 mt-1.5 text-center leading-tight" id="submitForApprovalHelpText">
-                    Client approval dispatch and signing links will be enabled in the upcoming approval release.
-                  </p>
-                </div>
+                {isNew ? (
+                  <div className="pt-2 border-t border-slate-100">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full opacity-60 cursor-not-allowed"
+                      disabled={true}
+                      leftIcon={<Send className="w-4 h-4" />}
+                      id="submitForApprovalButton"
+                    >
+                      Submit for Approval
+                    </Button>
+                    <p className="text-[11px] text-slate-400 mt-1.5 text-center leading-tight" id="submitForApprovalHelpText">
+                      Client approval dispatch and signing links will be enabled once this draft is saved.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-slate-100">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={handleSubmitForApproval}
+                      isLoading={isPublishing}
+                      disabled={isPublishing || isPending}
+                      leftIcon={<Send className="w-4 h-4" />}
+                      id="submitForApprovalButton"
+                    >
+                      Submit for Approval
+                    </Button>
+                    <p className="text-[11px] text-slate-500 mt-1.5 text-center leading-tight" id="submitForApprovalHelpText">
+                      Freezes draft into Version {((initialData?.currentVersion || 0) + 1)} and generates client sign-off link.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -644,6 +705,17 @@ export function ChangeRequestForm({
         proposedDeadline={watchedDeadline || null}
         deltaDays={liveDeltaDays}
       />
+
+      {/* Client Published Link Dialog */}
+      {publishedLink && (
+        <PublishedLinkDialog
+          isOpen={true}
+          onClose={handleClosePublishedDialog}
+          shareUrl={publishedLink.shareUrl}
+          expiresAt={publishedLink.expiresAt}
+          versionNumber={publishedLink.versionNumber}
+        />
+      )}
     </div>
   );
 }

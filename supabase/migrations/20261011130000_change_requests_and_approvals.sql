@@ -486,6 +486,112 @@ end;
 $$;
 
 
+-- Function 2C: regenerate_approval_token
+-- Revokes any active token for the current pending version and inserts a newly hashed token without changing version or draft status
+create or replace function public.regenerate_approval_token(
+  p_request_id uuid,
+  p_token_hash text,
+  p_expires_at timestamptz
+)
+returns json
+language plpgsql
+security definer set search_path = public, pg_temp
+as $$
+declare
+  v_caller_id uuid;
+  v_req record;
+  v_proj record;
+  v_version record;
+begin
+  v_caller_id := auth.uid();
+  if v_caller_id is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  select cr.* into v_req
+  from public.change_requests cr
+  where cr.id = p_request_id
+  for update;
+
+  if not found then
+    raise exception 'Change request not found';
+  end if;
+
+  if v_req.status != 'pending_approval' then
+    raise exception 'Illegal state transition: Can only regenerate approval tokens for pending proposals (current status: %)', v_req.status;
+  end if;
+
+  select p.*, wm.role into v_proj
+  from public.projects p
+  join public.workspace_members wm on wm.workspace_id = p.workspace_id and wm.user_id = v_caller_id
+  where p.id = v_req.project_id;
+
+  if not found or v_proj.role not in ('owner', 'manager') then
+    raise exception 'Forbidden: Only owners and managers can regenerate proposal links';
+  end if;
+
+  -- Locate active version record
+  select * into v_version
+  from public.change_request_versions
+  where change_request_id = p_request_id and version_number = v_req.current_version;
+
+  if not found then
+    raise exception 'Active version record not found for request %', p_request_id;
+  end if;
+
+  -- 1. Revoke any existing active token for this version
+  update public.approval_tokens
+  set revoked_at = timezone('utc'::text, now())
+  where version_id = v_version.id and revoked_at is null;
+
+  -- 2. Insert new token
+  insert into public.approval_tokens (
+    version_id,
+    token_hash,
+    expires_at,
+    created_by
+  ) values (
+    v_version.id,
+    p_token_hash,
+    p_expires_at,
+    v_caller_id
+  );
+
+  -- 3. Log audit activity
+  insert into public.activity_logs (
+    workspace_id,
+    actor_type,
+    actor_id,
+    actor_name,
+    entity_type,
+    entity_id,
+    action,
+    metadata
+  ) values (
+    v_proj.workspace_id,
+    'user',
+    v_caller_id,
+    (select full_name from public.profiles where id = v_caller_id),
+    'change_request',
+    p_request_id,
+    'approval_token_regenerated',
+    jsonb_build_object(
+      'version_number', v_version.version_number,
+      'version_id', v_version.id
+    )
+  );
+
+  return jsonb_build_object(
+    'success', true,
+    'request_id', p_request_id,
+    'version_id', v_version.id,
+    'version_number', v_version.version_number,
+    'expires_at', p_expires_at
+  );
+end;
+$$;
+
+
 -- Function 3: get_proposal_by_token
 -- Public, safe proposal resolver. Returns status code, NEVER leaks internal notes or raw errors.
 create or replace function public.get_proposal_by_token(
