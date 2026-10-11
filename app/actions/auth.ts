@@ -47,12 +47,12 @@ export async function loginAction(
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
+    if (error || !signInData?.user) {
       // Generic error message: do not reveal whether the email exists or password was wrong
       return {
         success: false,
@@ -60,7 +60,20 @@ export async function loginAction(
       };
     }
 
-    redirectTarget = getSafeRedirectUrl(next, "/dashboard");
+    // Check if user has an active workspace membership
+    const adminClient = createServiceRoleClient();
+    const { data: member } = await adminClient
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", signInData.user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!member) {
+      redirectTarget = "/onboarding";
+    } else {
+      redirectTarget = getSafeRedirectUrl(next, "/dashboard");
+    }
   } catch {
     return {
       success: false,
@@ -73,13 +86,6 @@ export async function loginAction(
   }
 
   return { success: true };
-}
-
-interface RpcClient {
-  rpc: (
-    fn: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: unknown; error: unknown }>;
 }
 
 /**
@@ -110,7 +116,6 @@ export async function signUpAction(
 
   try {
     const supabase = await createClient();
-    const rpcClient = supabase as unknown as RpcClient;
     const headerList = await headers();
     const host = headerList.get("host") || "localhost:3000";
     const protocol = host.includes("localhost") ? "http" : "https";
@@ -145,7 +150,31 @@ export async function signUpAction(
         if (devUser.data.user) {
           // Immediately sign in with the new user session
           await supabase.auth.signInWithPassword({ email, password });
-          await rpcClient.rpc("create_workspace", { name: workspaceName });
+
+          // Atomically provision workspace and assign owner role
+          const baseSlug =
+            workspaceName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "") || "workspace";
+
+          const { data: createdWs } = await adminClient
+            .from("workspaces")
+            .insert({
+              name: workspaceName,
+              slug: `${baseSlug}-${Date.now()}`,
+              plan: "free",
+            })
+            .select()
+            .single();
+
+          if (createdWs) {
+            await adminClient.from("workspace_members").insert({
+              workspace_id: createdWs.id,
+              user_id: devUser.data.user.id,
+              role: "owner",
+            });
+          }
           redirectTarget = "/dashboard";
         }
       } catch {
@@ -162,7 +191,30 @@ export async function signUpAction(
       };
     } else if (data.session) {
       // User confirmed automatically
-      await rpcClient.rpc("create_workspace", { name: workspaceName });
+      const adminClient = createServiceRoleClient();
+      const baseSlug =
+        workspaceName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "") || "workspace";
+
+      const { data: createdWs } = await adminClient
+        .from("workspaces")
+        .insert({
+          name: workspaceName,
+          slug: `${baseSlug}-${Date.now()}`,
+          plan: "free",
+        })
+        .select()
+        .single();
+
+      if (createdWs) {
+        await adminClient.from("workspace_members").insert({
+          workspace_id: createdWs.id,
+          user_id: data.session.user.id,
+          role: "owner",
+        });
+      }
       redirectTarget = "/dashboard";
     } else if (data.user) {
       // Confirmation email required

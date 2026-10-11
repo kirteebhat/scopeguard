@@ -45,7 +45,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Protected paths that require authentication
-  const protectedPrefixes = ["/dashboard", "/projects", "/settings"];
+  const protectedPrefixes = ["/dashboard", "/projects", "/settings", "/onboarding"];
   const isProtectedPath = protectedPrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
