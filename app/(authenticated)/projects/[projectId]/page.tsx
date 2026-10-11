@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProjectById } from "@/lib/data/projects";
 import { getProjectDeliverables } from "@/lib/data/deliverables";
+import { getProjectChangeRequests } from "@/lib/data/change-requests";
 import { getWorkspaceContextOrRedirect } from "@/lib/data/auth-context";
 import { formatMinorToCurrency } from "@/lib/domain/money";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,6 +18,7 @@ import {
   TrendingUp,
   FileText,
   ArrowRight,
+  Plus,
 } from "lucide-react";
 
 interface ProjectDetailPageProps {
@@ -53,6 +55,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   }
 
   const deliverables = await getProjectDeliverables(projectId);
+  const changeRequests = await getProjectChangeRequests(projectId);
   const hasApprovedExtra = project.approvedExtraMinor > 0;
   const hasExtendedDeadline = project.deltaDays > 0;
 
@@ -78,6 +81,16 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         description={`Client: ${project.clientName} • Currency: ${project.currency} • Start Date: ${project.startDate}`}
         actions={
           <div className="flex items-center gap-2">
+            <Link href={`/projects/${project.id}/changes`}>
+              <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
+                Change Orders ({changeRequests.length})
+              </Button>
+            </Link>
+            <Link href={`/changes/new?projectId=${project.id}`}>
+              <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+                New Change
+              </Button>
+            </Link>
             <Link href={`/projects/${project.id}/settings`}>
               <Button
                 variant="secondary"
@@ -205,30 +218,76 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             </CardContent>
           </Card>
 
-          {/* Change Requests Section - Placeholder with Real Empty State */}
+          {/* Change Requests Section */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base text-slate-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-600" />
-                Scope Change Requests
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Formal client proposals capturing out-of-scope tasks, budget additions, and timeline adjustments.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base text-slate-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-600" />
+                  Scope Change Requests
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Formal client proposals capturing out-of-scope tasks, budget additions, and timeline adjustments.
+                </CardDescription>
+              </div>
+              {changeRequests.length > 0 && (
+                <Link href={`/projects/${project.id}/changes`}>
+                  <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                    View All ({changeRequests.length})
+                  </Button>
+                </Link>
+              )}
             </CardHeader>
             <CardContent className="pt-2 pb-6">
-              <EmptyState
-                icon={<FileText className="w-8 h-8 text-slate-400" />}
-                title="No change requests yet"
-                description="When client requirements expand beyond this baseline, create a formal scope proposal to compute cost, extend deadlines, and secure client sign-off."
-                action={
-                  <div className="text-center">
-                    <span className="inline-block text-[11px] text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full font-medium">
-                      Proposal drafting & client approval links will activate in the next step.
-                    </span>
-                  </div>
-                }
-              />
+              {changeRequests.length === 0 ? (
+                <EmptyState
+                  icon={<FileText className="w-8 h-8 text-slate-400" />}
+                  title="No change requests yet"
+                  description="When client requirements expand beyond this baseline, create a formal scope proposal to compute cost, extend deadlines, and secure client sign-off."
+                  action={
+                    <Link href={`/changes/new?projectId=${project.id}`}>
+                      <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+                        Create Change Request
+                      </Button>
+                    </Link>
+                  }
+                />
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {changeRequests.slice(0, 5).map((cr) => (
+                    <div key={cr.id} className="py-3 flex items-center justify-between gap-4 text-xs">
+                      <div className="min-w-0">
+                        <Link href={`/changes/${cr.id}`} className="font-semibold text-slate-900 hover:text-indigo-600">
+                          {cr.title}
+                        </Link>
+                        {cr.deliverableTitle && (
+                          <p className="text-slate-500 text-[11px] mt-0.5">
+                            Target: {cr.deliverableTitle}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-bold text-slate-800">
+                          {formatMinorToCurrency(cr.costMinor, project.currency)}
+                        </span>
+                        <Badge
+                          variant={
+                            cr.status === "approved"
+                              ? "approved"
+                              : cr.status === "pending_approval"
+                              ? "pending"
+                              : cr.status === "rejected"
+                              ? "rejected"
+                              : "default"
+                          }
+                        >
+                          {cr.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -5,3 +5,4 @@ export * from "./members";
 export * from "./projects";
 export * from "./deliverables";
 export * from "./activity";
+export * from "./change-requests";

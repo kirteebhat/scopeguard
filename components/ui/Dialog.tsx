@@ -68,7 +68,7 @@ export function Dialog({
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          "relative z-50 w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left shadow-xl transition-all border border-slate-200 focus:outline-none",
+          "relative z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto transform rounded-2xl bg-white p-6 text-left shadow-xl transition-all border border-slate-200 focus:outline-none",
           className
         )}
       >

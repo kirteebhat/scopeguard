@@ -35,6 +35,7 @@ create table public.change_requests (
   hourly_rate_minor bigint default 0 check (hourly_rate_minor >= 0),
   cost_minor bigint not null default 0 check (cost_minor >= 0), -- Integer minor units (e.g. paise, cents)
   proposed_deadline date,
+  reason text, -- Rationale / justification for the change
   internal_notes text, -- Agency private notes: NEVER visible to clients
   status public.change_request_status not null default 'draft',
   current_version integer default null check (current_version is null or current_version >= 1),
@@ -217,6 +218,7 @@ begin
     'version_number', v_next_version,
     'title', v_req.title,
     'description', v_req.description,
+    'reason', v_req.reason,
     'pricing_method', v_req.pricing_method,
     'estimated_hours', v_req.estimated_hours,
     'hourly_rate_minor', v_req.hourly_rate_minor,

@@ -1,0 +1,280 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import type { ChangeRequestItem } from "@/lib/data/change-requests";
+import type { ProjectDetail } from "@/lib/data/projects";
+import type { ChangeRequestStatus } from "@/lib/domain/stateMachine";
+import { formatMinorToCurrency } from "@/lib/domain/money";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import {
+  FileText,
+  Plus,
+  Search,
+  Filter,
+  Clock,
+  CheckCircle2,
+  Layers,
+  ArrowRight,
+} from "lucide-react";
+
+interface ProjectChangesClientListProps {
+  project: ProjectDetail;
+  initialChanges: ChangeRequestItem[];
+  canCreate: boolean;
+}
+
+export function ProjectChangesClientList({
+  project,
+  initialChanges,
+  canCreate,
+}: ProjectChangesClientListProps) {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Summary Metrics
+  const metrics = useMemo(() => {
+    let pendingCount = 0;
+    let approvedMinor = 0;
+
+    for (const cr of initialChanges) {
+      if (cr.status === "pending_approval") {
+        pendingCount++;
+      } else if (cr.status === "approved") {
+        approvedMinor += cr.costMinor;
+      }
+    }
+
+    return {
+      totalCount: initialChanges.length,
+      pendingCount,
+      approvedMinor,
+    };
+  }, [initialChanges]);
+
+  // Filtered List
+  const filteredChanges = useMemo(() => {
+    return initialChanges.filter((cr) => {
+      // Status filter
+      if (statusFilter !== "all" && cr.status !== statusFilter) {
+        return false;
+      }
+
+      // Search filter
+      if (search.trim() !== "") {
+        const query = search.toLowerCase();
+        const matchesTitle = cr.title.toLowerCase().includes(query);
+        const matchesDesc = cr.description.toLowerCase().includes(query);
+        const matchesDeliv = cr.deliverableTitle?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesDesc && !matchesDeliv) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [initialChanges, search, statusFilter]);
+
+  const getStatusBadge = (status: ChangeRequestStatus) => {
+    switch (status) {
+      case "draft":
+        return <Badge variant="draft">Draft</Badge>;
+      case "pending_approval":
+        return <Badge variant="pending">Pending Approval</Badge>;
+      case "approved":
+        return <Badge variant="approved">Approved</Badge>;
+      case "rejected":
+        return <Badge variant="rejected">Rejected</Badge>;
+      case "withdrawn":
+        return <Badge variant="default">Withdrawn</Badge>;
+      default:
+        return <Badge variant="default">{status}</Badge>;
+    }
+  };
+
+  if (initialChanges.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-8 pb-8">
+          <EmptyState
+            icon={<FileText className="w-10 h-10 text-slate-400" />}
+            title="No change requests yet"
+            description="Create your first client change proposal to negotiate and protect scope modifications."
+            action={
+              canCreate ? (
+                <Link href={`/changes/new?projectId=${project.id}`}>
+                  <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} id="createFirstChangeRequestButton">
+                    New Change Request
+                  </Button>
+                </Link>
+              ) : undefined
+            }
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 3-Card Summary Metric Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 sm:p-5">
+            <span className="text-xs font-medium text-slate-500 block">Total Change Proposals</span>
+            <p className="text-xl font-bold text-slate-900 mt-1">{metrics.totalCount}</p>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">Recorded scope events</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 sm:p-5">
+            <span className="text-xs font-medium text-slate-500 block">Pending Client Approval</span>
+            <p className="text-xl font-bold text-amber-600 mt-1 flex items-center gap-1.5">
+              <Clock className="w-4 h-4" />
+              {metrics.pendingCount}
+            </p>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">Active links awaiting sign-off</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 sm:p-5">
+            <span className="text-xs font-medium text-slate-500 block">Approved Additional Scope</span>
+            <p className="text-xl font-bold text-emerald-600 mt-1 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" />
+              {formatMinorToCurrency(metrics.approvedMinor, project.currency)}
+            </p>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">Incorporated into project baseline</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search & Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input
+            type="text"
+            placeholder="Search proposals by title, deliverable, or scope description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 text-xs"
+            id="changeSearchInput"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 min-w-[150px]">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-9 text-xs py-1"
+              id="changeStatusFilter"
+            >
+              <option value="all">All Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="withdrawn">Withdrawn</option>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtered Content or Zero Matches */}
+      {filteredChanges.length === 0 ? (
+        <Card>
+          <CardContent className="pt-8 pb-8">
+            <EmptyState
+              icon={<Search className="w-8 h-8 text-slate-400" />}
+              title="No matching change requests"
+              description="No proposals match your current search query or status filter."
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("all");
+                  }}
+                  id="resetChangeFilterButton"
+                >
+                  Clear Filters
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200/80 bg-slate-50/75 text-slate-500 font-medium">
+                  <th className="py-3 px-4">Proposal</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Pricing</th>
+                  <th className="py-3 px-4">Additional Cost</th>
+                  <th className="py-3 px-4">Target Date</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredChanges.map((cr) => (
+                  <tr key={cr.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-slate-900 flex items-center gap-2">
+                        <span>{cr.title}</span>
+                        {cr.currentVersion && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                            v{cr.currentVersion}
+                          </span>
+                        )}
+                      </div>
+                      {cr.deliverableTitle && (
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Layers className="w-3 h-3 text-indigo-500" />
+                          <span>{cr.deliverableTitle}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">{getStatusBadge(cr.status)}</td>
+                    <td className="py-3.5 px-4 text-slate-600 capitalize">
+                      {cr.pricingMethod === "hourly"
+                        ? `${cr.estimatedHours || 0} hrs @ ${
+                            cr.hourlyRateMinor
+                              ? formatMinorToCurrency(cr.hourlyRateMinor, project.currency)
+                              : "—"
+                          }`
+                        : "Fixed Fee"}
+                    </td>
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
+                      {formatMinorToCurrency(cr.costMinor, project.currency)}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      {cr.proposedDeadline || "No deadline shift"}
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <Link href={`/changes/${cr.id}`}>
+                        <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                          {cr.status === "draft" ? "Edit Draft" : "View Details"}
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}

@@ -225,6 +225,7 @@ export interface Database {
           project_id: string;
           title: string;
           description: string;
+          reason: string | null;
           affected_deliverable_id: string | null;
           pricing_method: PricingMethod;
           estimated_hours: number;
@@ -243,6 +244,7 @@ export interface Database {
           project_id: string;
           title: string;
           description: string;
+          reason?: string | null;
           affected_deliverable_id?: string | null;
           pricing_method?: PricingMethod;
           estimated_hours?: number;
@@ -261,6 +263,7 @@ export interface Database {
           project_id?: string;
           title?: string;
           description?: string;
+          reason?: string | null;
           affected_deliverable_id?: string | null;
           pricing_method?: PricingMethod;
           estimated_hours?: number;

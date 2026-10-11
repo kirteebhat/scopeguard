@@ -18,6 +18,7 @@ export type ProjectStatus = Database["public"]["Enums"]["project_status"];
 
 export interface ProjectListItem {
   id: string;
+  workspaceId: string;
   name: string;
   clientName: string;
   status: ProjectStatus;
@@ -207,6 +208,7 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
 
     return {
       id: p.id,
+      workspaceId: p.workspace_id,
       name: p.name,
       clientName: p.client_name,
       status: p.status,
@@ -341,6 +343,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
 
   return {
     id: project.id,
+    workspaceId: project.workspace_id,
     name: project.name,
     clientName: project.client_name,
     status: project.status,

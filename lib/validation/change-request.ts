@@ -53,6 +53,18 @@ export const createChangeRequestDraftSchema = z.object({
     .optional()
     .nullable(),
   proposedDeadline: isoDateSchema.optional().nullable(),
+  reason: z
+    .string()
+    .trim()
+    .max(2000, "Reason cannot exceed 2000 characters")
+    .optional()
+    .nullable(),
+  internalNotes: z
+    .string()
+    .trim()
+    .max(5000, "Internal notes cannot exceed 5000 characters")
+    .optional()
+    .nullable(),
   termsNotes: z
     .string()
     .trim()
@@ -100,6 +112,18 @@ export const updateChangeRequestDraftSchema = z.object({
     .optional()
     .nullable(),
   proposedDeadline: isoDateSchema.optional().nullable(),
+  reason: z
+    .string()
+    .trim()
+    .max(2000, "Reason cannot exceed 2000 characters")
+    .optional()
+    .nullable(),
+  internalNotes: z
+    .string()
+    .trim()
+    .max(5000, "Internal notes cannot exceed 5000 characters")
+    .optional()
+    .nullable(),
   termsNotes: z
     .string()
     .trim()
@@ -107,6 +131,110 @@ export const updateChangeRequestDraftSchema = z.object({
     .optional()
     .nullable(),
 });
+
+/**
+ * Client-side react-hook-form validation schema.
+ * Handles decimal string inputs for currency fields and optional delta days.
+ */
+export const clientChangeRequestFormSchema = z
+  .object({
+    projectId: z.string().uuid("Please select a project"),
+    title: z
+      .string()
+      .trim()
+      .min(2, "Title must be at least 2 characters")
+      .max(150, "Title cannot exceed 150 characters"),
+    description: z
+      .string()
+      .trim()
+      .min(5, "Description must be at least 5 characters")
+      .max(5000, "Description cannot exceed 5000 characters"),
+    reason: z
+      .string()
+      .trim()
+      .max(2000, "Reason cannot exceed 2000 characters")
+      .optional()
+      .or(z.literal("")),
+    deliverableId: z
+      .string()
+      .refine(
+        (val) => !val || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val),
+        "Invalid deliverable ID"
+      )
+      .optional()
+      .or(z.literal("")),
+    pricingMethod: z.enum(PRICING_METHODS),
+    hours: z
+      .string()
+      .optional()
+      .or(z.literal("")),
+    hourlyRate: z
+      .string()
+      .optional()
+      .or(z.literal("")),
+    fixedCost: z
+      .string()
+      .optional()
+      .or(z.literal("")),
+    proposedDeadline: z
+      .string()
+      .optional()
+      .or(z.literal("")),
+    additionalDays: z
+      .string()
+      .optional()
+      .or(z.literal("")),
+    internalNotes: z
+      .string()
+      .trim()
+      .max(5000, "Internal notes cannot exceed 5000 characters")
+      .optional()
+      .or(z.literal("")),
+  })
+  .superRefine((data, ctx) => {
+    if (data.pricingMethod === "hourly") {
+      const parsedHours = parseFloat(data.hours || "");
+      if (isNaN(parsedHours) || parsedHours < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid non-negative number of hours (e.g. 12.5)",
+          path: ["hours"],
+        });
+      } else if (parsedHours > MAX_HOURS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Estimated hours cannot exceed ${MAX_HOURS}`,
+          path: ["hours"],
+        });
+      }
+
+      if (!data.hourlyRate || data.hourlyRate.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter an hourly rate",
+          path: ["hourlyRate"],
+        });
+      }
+    } else if (data.pricingMethod === "fixed") {
+      if (!data.fixedCost || data.fixedCost.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a fixed charge amount",
+          path: ["fixedCost"],
+        });
+      }
+    }
+
+    if (data.proposedDeadline && data.proposedDeadline.trim() !== "") {
+      if (!ISO_DATE_REGEX.test(data.proposedDeadline) || !isValidDateString(data.proposedDeadline)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Proposed deadline must be a valid calendar date in YYYY-MM-DD format",
+          path: ["proposedDeadline"],
+        });
+      }
+    }
+  });
 
 /**
  * Strict schema for publishing a change request to pending approval.
