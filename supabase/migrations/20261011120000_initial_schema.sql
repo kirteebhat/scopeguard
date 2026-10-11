@@ -3,8 +3,8 @@
 -- Identity, Workspaces, Members, Projects, and Deliverables
 -- ============================================================================
 
--- 1. EXTENSIONS & UTILITIES
-create extension if not exists "uuid-ossp";
+-- 1. UTILITIES & TRIGGERS
+-- Native gen_random_uuid() is built-in to Postgres 13+ and Supabase
 
 -- Reusable updated_at timestamp trigger function
 create or replace function public.handle_updated_at()
