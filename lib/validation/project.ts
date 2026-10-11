@@ -105,6 +105,7 @@ export const updateProjectSchema = z
       .min(0, "Hourly rate cannot be negative")
       .max(MAX_HOURLY_RATE_MINOR, "Hourly rate exceeds maximum permitted limit")
       .optional(),
+    status: z.enum(["active", "completed", "on_hold", "archived"]).optional(),
     startDate: isoDateSchema.optional(),
     originalDeadline: isoDateSchema.optional(),
   })
@@ -123,3 +124,4 @@ export const updateProjectSchema = z
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
