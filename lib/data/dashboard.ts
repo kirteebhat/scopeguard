@@ -179,7 +179,10 @@ export async function getDashboardData(overrideWorkspaceId?: string): Promise<Da
   for (const cr of changeRequests) {
     if (cr.change_request_versions) {
       for (const ver of cr.change_request_versions) {
-        const approval = ver.approvals?.[0];
+        const rawApproval = ver.approvals;
+        const approval = Array.isArray(rawApproval)
+          ? rawApproval[0]
+          : (rawApproval as { id: string; decision: string; decided_at: string } | null | undefined);
         if (approval && approval.decision === "approved") {
           const list = approvedMap.get(cr.project_id) || [];
           list.push({

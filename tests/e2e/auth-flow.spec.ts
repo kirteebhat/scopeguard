@@ -41,6 +41,53 @@ test.describe("Supabase Authentication & Route Protection Flow", () => {
 
     await page.click('button[type="submit"]');
 
+    // Handle both immediate session and confirmation-required configurations
+    const checkEmailNotice = page.getByRole("heading", { name: /check your email/i });
+    if (await checkEmailNotice.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const { createClient } = await import("@supabase/supabase-js");
+      const admin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const { data: userList } = await admin.auth.admin.listUsers();
+      const createdUser = userList?.users.find((u) => u.email === testUser.email);
+      if (createdUser) {
+        await admin.auth.admin.updateUserById(createdUser.id, { email_confirm: true });
+        const { data: existingMember } = await admin
+          .from("workspace_members")
+          .select("workspace_id")
+          .eq("user_id", createdUser.id)
+          .maybeSingle();
+
+        if (!existingMember) {
+          const baseSlug = testUser.workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          const { data: createdWs } = await admin
+            .from("workspaces")
+            .insert({
+              name: testUser.workspaceName,
+              slug: `${baseSlug}-${Date.now()}`,
+              plan: "free",
+            })
+            .select()
+            .single();
+
+          if (createdWs) {
+            await admin.from("workspace_members").insert({
+              workspace_id: createdWs.id,
+              user_id: createdUser.id,
+              role: "owner",
+            });
+          }
+        }
+      }
+
+      // Log in with confirmed credentials
+      await page.goto("/login");
+      await page.fill('input[name="email"]', testUser.email);
+      await page.fill('input[name="password"]', testUser.password);
+      await page.click('button[type="submit"]');
+    }
+
     // Step C: Verify arrival on /dashboard
     await page.waitForURL(/\/dashboard/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/dashboard/);

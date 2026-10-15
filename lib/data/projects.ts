@@ -109,6 +109,8 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
   const projectIds = projects.map((p) => p.id);
 
   // 2. Fetch change requests and approved versions across these projects
+  const projectCurrencyMap = new Map(projects.map((p) => [p.id, p.currency]));
+
   const { data: crData } = await adminClient
     .from("change_requests")
     .select(`
@@ -116,7 +118,6 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
       project_id,
       status,
       cost_minor,
-      currency,
       proposed_deadline,
       change_request_versions (
         id,
@@ -142,7 +143,6 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
     project_id: string;
     status: string;
     cost_minor: number;
-    currency: string;
     proposed_deadline: string | null;
     change_request_versions?: Array<{
       id: string;
@@ -160,7 +160,10 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
     // Process approved versions
     if (cr.change_request_versions) {
       for (const ver of cr.change_request_versions) {
-        const approval = ver.approvals?.[0];
+        const rawApproval = ver.approvals;
+        const approval = Array.isArray(rawApproval)
+          ? rawApproval[0]
+          : (rawApproval as { id: string; decision: string; decided_at: string } | null | undefined);
         if (approval && approval.decision === "approved") {
           const list = approvedMap.get(cr.project_id) || [];
           list.push({
@@ -183,7 +186,7 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
       pendingList.push({
         changeRequestId: cr.id,
         costMinor: cr.cost_minor,
-        currency: cr.currency,
+        currency: projectCurrencyMap.get(cr.project_id) || "USD",
         proposedDeadline: cr.proposed_deadline,
       });
       pendingMap.set(cr.project_id, pendingList);
@@ -264,7 +267,6 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
       project_id,
       status,
       cost_minor,
-      currency,
       proposed_deadline,
       change_request_versions (
         id,
@@ -289,7 +291,6 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     project_id: string;
     status: string;
     cost_minor: number;
-    currency: string;
     proposed_deadline: string | null;
     change_request_versions?: Array<{
       id: string;
@@ -306,7 +307,10 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
   for (const cr of changeRequests) {
     if (cr.change_request_versions) {
       for (const ver of cr.change_request_versions) {
-        const approval = ver.approvals?.[0];
+        const rawApproval = ver.approvals;
+        const approval = Array.isArray(rawApproval)
+          ? rawApproval[0]
+          : (rawApproval as { id: string; decision: string; decided_at: string } | null | undefined);
         if (approval && approval.decision === "approved") {
           approvedVersions.push({
             versionId: ver.id,
@@ -325,7 +329,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
       pendingProposals.push({
         changeRequestId: cr.id,
         costMinor: cr.cost_minor,
-        currency: cr.currency,
+        currency: project.currency,
         proposedDeadline: cr.proposed_deadline,
       });
     }
