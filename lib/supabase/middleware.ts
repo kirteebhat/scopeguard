@@ -81,5 +81,16 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
+  if (pathname.startsWith("/approve/")) {
+    supabaseResponse.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate"
+    );
+    supabaseResponse.headers.set("Pragma", "no-cache");
+    supabaseResponse.headers.set("Expires", "0");
+    supabaseResponse.headers.set("Referrer-Policy", "no-referrer");
+    supabaseResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
+
   return supabaseResponse;
 }

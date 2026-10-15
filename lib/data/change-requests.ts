@@ -80,7 +80,7 @@ export interface UpdateDraftData {
   internalNotes?: string | null;
 }
 
-interface RawChangeRequestRow {
+export interface RawChangeRequestRow {
   id: string;
   project_id: string;
   title: string;
@@ -611,7 +611,7 @@ export async function updateChangeRequestDraft(
   });
 }
 
-interface CustomRpcClient {
+export interface CustomRpcClient {
   rpc: (
     fn: string,
     args: Record<string, unknown>

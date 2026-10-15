@@ -3,10 +3,12 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getChangeRequestById } from "@/lib/data/change-requests";
+import { getChangeRequestActivityLogs } from "@/lib/data/activity";
 import { getWorkspaceContextOrRedirect } from "@/lib/data/auth-context";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ChangeRequestForm } from "@/components/changes/ChangeRequestForm";
 import { ChangeRequestReadOnlyDetail } from "@/components/changes/ChangeRequestReadOnlyDetail";
+import { ActivityFeed } from "@/components/activity/ActivityFeed";
 import { ArrowLeft } from "lucide-react";
 
 interface ChangeDetailPageProps {
@@ -42,6 +44,7 @@ export default async function ChangeDetailPage({ params }: ChangeDetailPageProps
   }
 
   const isDraft = changeRequest.status === "draft";
+  const activities = await getChangeRequestActivityLogs(changeId);
 
   return (
     <div className="space-y-6">
@@ -68,11 +71,14 @@ export default async function ChangeDetailPage({ params }: ChangeDetailPageProps
             initialData={changeRequest}
             isNew={false}
           />
+
+          <ActivityFeed activities={activities} title="Draft History & Activity" />
         </>
       ) : (
         <ChangeRequestReadOnlyDetail
           changeRequest={changeRequest}
           userRole={role}
+          activities={activities}
         />
       )}
     </div>

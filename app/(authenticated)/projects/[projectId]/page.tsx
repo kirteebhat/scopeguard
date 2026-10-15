@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ProjectImpactCard } from "@/components/projects/ProjectImpactCard";
+import { ActivityFeed } from "@/components/activity/ActivityFeed";
+import { getProjectActivityLogs } from "@/lib/data/activity";
 import {
   Settings,
   Layers,
-  TrendingUp,
   FileText,
   ArrowRight,
   Plus,
@@ -56,8 +58,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   const deliverables = await getProjectDeliverables(projectId);
   const changeRequests = await getProjectChangeRequests(projectId);
-  const hasApprovedExtra = project.approvedExtraMinor > 0;
-  const hasExtendedDeadline = project.deltaDays > 0;
+  const activities = await getProjectActivityLogs(projectId);
 
   const getDeliverableStatusBadge = (status: string) => {
     switch (status) {
@@ -105,69 +106,8 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         }
       />
 
-      {/* Financial & Timeline Metrics Summary Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Original Budget */}
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium text-slate-500 block">Original Budget</span>
-            <p className="text-lg sm:text-xl font-bold text-slate-900 mt-1">
-              {formatMinorToCurrency(project.budgetMinor, project.currency)}
-            </p>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">Contract baseline</span>
-          </CardContent>
-        </Card>
-
-        {/* Approved Changes */}
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium text-slate-500 block">Approved Additional</span>
-            <p className="text-lg sm:text-xl font-bold text-emerald-600 mt-1 flex items-center gap-1">
-              {hasApprovedExtra && <TrendingUp className="w-4 h-4" />}
-              {formatMinorToCurrency(project.approvedExtraMinor, project.currency)}
-            </p>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
-              {project.financialRollup.approvedVersionsCount} approved proposal
-              {project.financialRollup.approvedVersionsCount === 1 ? "" : "s"}
-            </span>
-          </CardContent>
-        </Card>
-
-        {/* Revised Total Budget */}
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium text-slate-500 block">Revised Total</span>
-            <p className="text-lg sm:text-xl font-bold text-indigo-950 mt-1">
-              {formatMinorToCurrency(project.revisedBudgetMinor, project.currency)}
-            </p>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
-              {hasApprovedExtra ? "Baseline + Approved Changes" : "No approved changes"}
-            </span>
-          </CardContent>
-        </Card>
-
-        {/* Revised Deadline */}
-        <Card>
-          <CardContent className="p-4 sm:p-5">
-            <span className="text-xs font-medium text-slate-500 block">Revised Deadline</span>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-lg sm:text-xl font-bold text-slate-900">
-                {project.revisedDeadline || project.originalDeadline}
-              </p>
-              {hasExtendedDeadline && (
-                <span className="text-xs font-semibold px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded">
-                  +{project.deltaDays}d
-                </span>
-              )}
-            </div>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">
-              {hasExtendedDeadline
-                ? `Extended from ${project.originalDeadline}`
-                : "Contractual delivery date"}
-            </span>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Project Impact Card (Pillars for Contract Value, Approved Changes, Estimates Pending) */}
+      <ProjectImpactCard project={project} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Scope & Deliverables (2 cols) */}
@@ -333,6 +273,9 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
               )}
             </CardContent>
           </Card>
+
+          {/* Activity & Audit Trail Feed */}
+          <ActivityFeed activities={activities} title="Project Activity & Audit Trail" />
         </div>
       </div>
     </div>

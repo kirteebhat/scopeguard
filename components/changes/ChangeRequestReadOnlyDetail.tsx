@@ -31,14 +31,19 @@ import {
   User,
 } from "lucide-react";
 
+import { ActivityFeed } from "@/components/activity/ActivityFeed";
+import type { ActivityLogItem } from "@/lib/data/activity";
+
 interface ChangeRequestReadOnlyDetailProps {
   changeRequest: ChangeRequestDetail;
   userRole: "owner" | "manager" | "member";
+  activities?: ActivityLogItem[];
 }
 
 export function ChangeRequestReadOnlyDetail({
   changeRequest,
   userRole,
+  activities,
 }: ChangeRequestReadOnlyDetailProps) {
   const router = useRouter();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -476,6 +481,9 @@ export function ChangeRequestReadOnlyDetail({
           </Card>
         </div>
       </div>
+
+      {/* Change Request Audit Trail Feed */}
+      <ActivityFeed activities={activities || []} title="Proposal Audit & Activity Trail" />
 
       {/* Proposal Preview Modal */}
       <ProposalPreviewModal
