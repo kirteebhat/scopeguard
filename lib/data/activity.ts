@@ -223,6 +223,57 @@ export async function getChangeRequestActivityLogs(
   return mergeAndDeduplicateLogs(dbLogs, relevantFallback);
 }
 
+/**
+ * Retrieves activity logs for the caller's workspace (or explicit workspace).
+ * Used for workspace audit feeds and dashboard activity streams.
+ */
+export async function getWorkspaceActivityLogs(
+  workspaceIdOverride?: string,
+  limit: number = 20
+): Promise<ActivityLogItem[]> {
+  let wsId = workspaceIdOverride;
+  if (!wsId) {
+    const context = await getAuthenticatedContext();
+    wsId = context.workspace.id;
+  }
+
+  const adminClient = createServiceRoleClient();
+  let dbLogs: ActivityLogItem[] = [];
+
+  try {
+    const { data, error } = await adminClient
+      .from("activity_logs")
+      .select("*")
+      .eq("workspace_id", wsId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      dbLogs = data.map((d) => ({
+        id: d.id,
+        workspaceId: d.workspace_id,
+        actorType: d.actor_type as ActorType,
+        actorId: d.actor_id,
+        actorName: d.actor_name,
+        entityType: d.entity_type,
+        entityId: d.entity_id,
+        action: d.action,
+        metadata: (d.metadata as Record<string, unknown>) || {},
+        createdAt: d.created_at,
+      }));
+    }
+  } catch {
+    // Fallback to in-memory store
+  }
+
+  const relevantFallback = fallbackActivityStore.filter(
+    (log) => log.workspaceId === wsId
+  );
+
+  const merged = mergeAndDeduplicateLogs(dbLogs, relevantFallback);
+  return merged.slice(0, limit);
+}
+
 function mergeAndDeduplicateLogs(
   primary: ActivityLogItem[],
   secondary: ActivityLogItem[]
@@ -247,3 +298,4 @@ function mergeAndDeduplicateLogs(
   merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   return merged;
 }
+

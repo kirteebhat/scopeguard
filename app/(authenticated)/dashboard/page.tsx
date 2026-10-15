@@ -2,90 +2,90 @@ import React from "react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { FolderKanban, FileText, CheckCircle2, Plus } from "lucide-react";
+import {
+  DashboardMetricsGrid,
+  DashboardRecentProjects,
+  DashboardEmptyWorkspace,
+} from "@/components/dashboard";
+import { ActivityFeed } from "@/components/activity/ActivityFeed";
+import { getDashboardData } from "@/lib/data/dashboard";
+import { Plus, FileEdit } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Dashboard - ScopeGuard",
-  description: "ScopeGuard agency dashboard and active projects overview.",
+  description: "ScopeGuard agency dashboard, live metrics, and scope change management.",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const data = await getDashboardData();
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Dashboard"
         description="Monitor active projects, draft change requests, and client approval statuses."
         actions={
-          <Link href="/projects/new">
-            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-              New Project
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {data.hasProjects && (
+              <Link href="/changes/new">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  leftIcon={<FileEdit className="w-4 h-4" />}
+                >
+                  New Change Request
+                </Button>
+              </Link>
+            )}
+
+            <Link href="/projects/new">
+              <Button
+                variant="primary"
+                size="md"
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                New Project
+              </Button>
+            </Link>
+          </div>
         }
       />
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Active Projects
-            </CardTitle>
-            <FolderKanban className="w-4 h-4 text-indigo-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">0</div>
-            <p className="text-xs text-slate-500 mt-1">Currently managed</p>
-          </CardContent>
-        </Card>
+      {!data.hasProjects ? (
+        /* Brand New Workspace Empty State */
+        <div className="space-y-6">
+          <DashboardEmptyWorkspace />
+          {data.recentActivity.length > 0 && (
+            <ActivityFeed
+              activities={data.recentActivity}
+              title="Workspace Activity"
+              emptyMessage="No activity recorded yet in this workspace."
+            />
+          )}
+        </div>
+      ) : (
+        /* Active Workspace Dashboard with Real Metrics */
+        <div className="space-y-6">
+          {/* Key Metrics & Multi-Currency Approved Charges */}
+          <DashboardMetricsGrid metrics={data.metrics} />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Pending Client Approvals
-            </CardTitle>
-            <FileText className="w-4 h-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">0</div>
-            <p className="text-xs text-slate-500 mt-1">Awaiting client decision</p>
-          </CardContent>
-        </Card>
+          {/* 2-Column Responsive Layout: Projects & Audit Stream */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <DashboardRecentProjects projects={data.recentProjects} />
+            </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Approved Change Budget
-            </CardTitle>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">$0.00</div>
-            <p className="text-xs text-slate-500 mt-1">From immutable snapshots</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Empty State Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <EmptyState
-            icon={<FolderKanban className="w-8 h-8 text-slate-400" />}
-            title="No projects configured yet"
-            description="Create your first client project to establish baseline deliverable budgets and start issuing change orders."
-            action={
-              <Link href="/projects/new">
-                <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-                  Create your first project
-                </Button>
-              </Link>
-            }
-          />
-        </CardContent>
-      </Card>
+            <div className="lg:col-span-1">
+              <ActivityFeed
+                activities={data.recentActivity}
+                title="Recent Activity"
+                emptyMessage="No recent activity in this workspace."
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

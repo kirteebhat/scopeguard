@@ -34,6 +34,7 @@ export interface ProjectListItem {
   pendingRequestsCount: number;
   pendingExtraMinor: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface ProjectDetail extends ProjectListItem {
@@ -224,6 +225,7 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
       pendingRequestsCount: pending.length,
       pendingExtraMinor: rollup.pendingExtraMinor,
       createdAt: p.created_at,
+      updatedAt: p.updated_at,
     };
   });
 }
@@ -359,6 +361,7 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     pendingRequestsCount: pendingProposals.length,
     pendingExtraMinor: rollup.pendingExtraMinor,
     createdAt: project.created_at,
+    updatedAt: project.updated_at,
     createdBy: project.created_by,
     deliverablesCount: deliverablesCount || 0,
     financialRollup: rollup,
