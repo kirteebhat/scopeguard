@@ -46,7 +46,6 @@ export async function generateMetadata({
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { projectId } = await params;
-  console.log("[ProjectDetailPage] Rendering with projectId:", projectId);
   await getWorkspaceContextOrRedirect();
 
   let project;

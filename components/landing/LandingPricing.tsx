@@ -136,7 +136,7 @@ export function LandingPricing() {
                       <span className="text-xs text-slate-500 font-medium">/{tier.period.split(" ")[1] || "mo"}</span>
                     )}
                   </div>
-                  <span className="text-[11px] text-slate-400 block mt-0.5 capitalize">{tier.period}</span>
+                  <span className="text-[11px] text-slate-600 font-medium block mt-0.5 capitalize">{tier.period}</span>
                 </div>
 
                 {/* Features List */}

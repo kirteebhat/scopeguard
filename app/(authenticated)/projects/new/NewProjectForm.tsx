@@ -365,6 +365,7 @@ export function NewProjectForm() {
                 onChange={(e) => setNewDelTitle(e.target.value)}
                 disabled={isPending}
                 id="newDeliverableTitle"
+                aria-label="Deliverable title"
               />
               <Input
                 placeholder="Description or notes (optional)"
@@ -372,6 +373,7 @@ export function NewProjectForm() {
                 onChange={(e) => setNewDelDesc(e.target.value)}
                 disabled={isPending}
                 id="newDeliverableDesc"
+                aria-label="Deliverable description"
               />
             </div>
             {delError && <p className="text-xs text-rose-600 font-medium">{delError}</p>}

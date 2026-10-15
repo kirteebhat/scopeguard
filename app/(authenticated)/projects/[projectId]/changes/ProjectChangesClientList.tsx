@@ -166,6 +166,7 @@ export function ProjectChangesClientList({
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 text-xs"
             id="changeSearchInput"
+            aria-label="Search proposals by title or deliverable"
           />
         </div>
 
@@ -177,6 +178,7 @@ export function ProjectChangesClientList({
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-9 text-xs py-1"
               id="changeStatusFilter"
+              aria-label="Filter proposals by status"
             >
               <option value="all">All Statuses</option>
               <option value="draft">Draft</option>
@@ -213,8 +215,9 @@ export function ProjectChangesClientList({
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
+        <Card className="overflow-hidden">
+          {/* Desktop Table View (Hidden on mobile) */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-slate-50/75 text-slate-500 font-medium">
@@ -272,6 +275,64 @@ export function ProjectChangesClientList({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View (Collapsed on mobile, no horizontal overflow) */}
+          <div className="block sm:hidden divide-y divide-slate-100">
+            {filteredChanges.map((cr) => (
+              <div key={cr.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-slate-900 text-sm">{cr.title}</span>
+                      {cr.currentVersion && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                          v{cr.currentVersion}
+                        </span>
+                      )}
+                    </div>
+                    {cr.deliverableTitle && (
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Layers className="w-3 h-3 text-indigo-500" />
+                        <span>{cr.deliverableTitle}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0">{getStatusBadge(cr.status)}</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl">
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Pricing Method</span>
+                    <span className="font-medium text-slate-800 capitalize">
+                      {cr.pricingMethod === "hourly"
+                        ? `${cr.estimatedHours || 0} hrs`
+                        : "Fixed Fee"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-500 block">Additional Cost</span>
+                    <span className="font-bold text-slate-900">
+                      {formatMinorToCurrency(cr.costMinor, project.currency)}
+                    </span>
+                  </div>
+                  <div className="col-span-2 pt-1 border-t border-slate-200/60">
+                    <span className="text-[11px] text-slate-500 block">Proposed Deadline</span>
+                    <span className="font-medium text-slate-800">
+                      {cr.proposedDeadline || "No deadline shift"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Link href={`/changes/${cr.id}`} className="w-full">
+                    <Button variant="secondary" size="sm" className="w-full justify-center" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                      {cr.status === "draft" ? "Edit Draft" : "View Proposal Details"}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}

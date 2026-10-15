@@ -42,11 +42,8 @@ import {
 } from "lucide-react";
 
 export default function DevComponentsPage() {
-  // Excluded from production unless explicitly enabled via environment flag
-  if (
-    process.env.NODE_ENV === "production" &&
-    process.env.NEXT_PUBLIC_ENABLE_DEV_COMPONENTS !== "true"
-  ) {
+  // Strictly excluded from production builds
+  if (process.env.NODE_ENV === "production") {
     notFound();
   }
 

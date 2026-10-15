@@ -101,11 +101,11 @@ export function LandingFooter() {
         </div>
 
         {/* Disclaimer & Copyright */}
-        <div className="pt-8 border-t border-slate-800 text-xs text-slate-500 space-y-2 sm:flex sm:items-center sm:justify-between sm:space-y-0">
+        <div className="pt-8 border-t border-slate-800 text-xs text-slate-400 space-y-2 sm:flex sm:items-center sm:justify-between sm:space-y-0">
           <p>
             © {new Date().getFullYear()} ScopeGuard. Built for software agencies, dev shops, and consulting studios.
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             Launch Preview Notice: Payments are not connected. All features are free during initial release.
           </p>
         </div>

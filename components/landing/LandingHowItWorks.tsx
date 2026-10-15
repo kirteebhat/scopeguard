@@ -65,7 +65,7 @@ export function LandingHowItWorks() {
                   <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-2xs">
                     {step.icon}
                   </div>
-                  <span className="text-xl font-extrabold text-slate-300 tracking-tight font-mono">
+                  <span className="text-xl font-extrabold text-slate-500 tracking-tight font-mono">
                     {step.number}
                   </span>
                 </div>

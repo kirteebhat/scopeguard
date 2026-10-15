@@ -1,7 +1,15 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
+  // Block internal developer routes in production builds
+  if (
+    process.env.NODE_ENV === "production" &&
+    request.nextUrl.pathname.startsWith("/dev")
+  ) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   return await updateSession(request);
 }
 

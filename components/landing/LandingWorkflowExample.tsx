@@ -115,7 +115,7 @@ export function LandingWorkflowExample({ defaultTab = "agency" }: { defaultTab?:
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs text-slate-400 block">Proposed Charge</span>
+                      <span className="text-xs text-slate-600 font-medium block">Proposed Charge</span>
                       <span className="text-2xl font-extrabold text-slate-900 font-mono">
                         ₹50,000.00
                       </span>
@@ -135,19 +135,19 @@ export function LandingWorkflowExample({ defaultTab = "agency" }: { defaultTab?:
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                       <div className="p-3 bg-white rounded-lg border border-slate-200/60">
-                        <span className="text-xs text-slate-500 block">Project Contract Budget</span>
+                        <span className="text-xs text-slate-600 block">Project Contract Budget</span>
                         <div className="text-sm font-semibold text-slate-900 mt-0.5">
-                          ₹500,000.00 → <span className="text-emerald-600 font-bold">₹550,000.00</span>
+                          ₹500,000.00 → <span className="text-emerald-700 font-bold">₹550,000.00</span>
                         </div>
-                        <span className="text-[11px] text-emerald-600 block">+₹50,000.00 estimated scope increase</span>
+                        <span className="text-[11px] text-emerald-700 font-medium block">+₹50,000.00 estimated scope increase</span>
                       </div>
 
                       <div className="p-3 bg-white rounded-lg border border-slate-200/60">
-                        <span className="text-xs text-slate-500 block">Project Delivery Timeline</span>
+                        <span className="text-xs text-slate-600 block">Project Delivery Timeline</span>
                         <div className="text-sm font-semibold text-slate-900 mt-0.5">
-                          15 Nov 2026 → <span className="text-amber-600 font-bold">30 Nov 2026</span>
+                          15 Nov 2026 → <span className="text-amber-800 font-bold">30 Nov 2026</span>
                         </div>
-                        <span className="text-[11px] text-amber-600 block">+15 calendar days delivery shift</span>
+                        <span className="text-[11px] text-amber-800 font-medium block">+15 calendar days delivery shift</span>
                       </div>
                     </div>
                   </div>
@@ -236,7 +236,7 @@ export function LandingWorkflowExample({ defaultTab = "agency" }: { defaultTab?:
                       <div className="text-2xl font-extrabold text-slate-900 mt-1">
                         30 Nov 2026
                       </div>
-                      <span className="text-[11px] text-amber-600 block mt-1 font-medium">
+                      <span className="text-[11px] text-amber-800 block mt-1 font-semibold">
                         +15 days from original deadline (15 Nov)
                       </span>
                     </div>

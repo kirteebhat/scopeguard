@@ -163,6 +163,7 @@ export function DeliverablesManager({
                 onChange={(e) => setNewTitle(e.target.value)}
                 disabled={isPending}
                 id="deliverableTitleInput"
+                aria-label="New deliverable title"
                 required
               />
               <Input
@@ -171,6 +172,7 @@ export function DeliverablesManager({
                 onChange={(e) => setNewDesc(e.target.value)}
                 disabled={isPending}
                 id="deliverableDescInput"
+                aria-label="New deliverable description"
               />
             </div>
             <div className="flex justify-end">
@@ -250,7 +252,9 @@ export function DeliverablesManager({
       >
         <div className="space-y-4 pt-2">
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1">Title</label>
+            <label htmlFor="editDeliverableTitleInput" className="text-xs font-medium text-slate-700 block mb-1">
+              Title
+            </label>
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -259,7 +263,9 @@ export function DeliverablesManager({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1">Description</label>
+            <label htmlFor="editDeliverableDescInput" className="text-xs font-medium text-slate-700 block mb-1">
+              Description
+            </label>
             <Input
               value={editDesc}
               onChange={(e) => setEditDesc(e.target.value)}
@@ -268,7 +274,9 @@ export function DeliverablesManager({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-700 block mb-1">Status</label>
+            <label htmlFor="editDeliverableStatusSelect" className="text-xs font-medium text-slate-700 block mb-1">
+              Status
+            </label>
             <Select
               value={editStatus}
               onChange={(e) => setEditStatus(e.target.value as DeliverableStatus)}

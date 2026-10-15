@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default async function NewProjectPage() {
-  console.log("[NewProjectPage] Rendering /projects/new");
   // Guard: Only owner and manager can access new project creation
   await requireRole(["owner", "manager"]);
 

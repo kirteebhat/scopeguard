@@ -117,6 +117,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 text-xs"
             id="projectSearchInput"
+            aria-label="Search projects or clients"
           />
         </div>
 
@@ -128,6 +129,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-9 text-xs py-1"
               id="projectStatusFilter"
+              aria-label="Filter projects by status"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -144,6 +146,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
               onChange={(e) => setSortBy(e.target.value as SortOption)}
               className="h-9 text-xs py-1"
               id="projectSortBy"
+              aria-label="Sort projects"
             >
               <option value="newest">Newest First</option>
               <option value="deadline_asc">Deadline (Earliest)</option>

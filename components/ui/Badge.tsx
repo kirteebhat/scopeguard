@@ -30,7 +30,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export function Badge({
   children,
   variant = "default",
-  showIcon = false,
+  showIcon = true,
   className,
   ...props
 }: BadgeProps) {

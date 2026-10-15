@@ -49,64 +49,124 @@ export default async function TeamSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 sm:p-6 sm:pt-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Joined</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => {
-                const isTargetOwner = member.role === "owner";
-                const isSelf = member.userId === currentUserId;
+          {/* Desktop Table View (Hidden on mobile) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => {
+                  const isTargetOwner = member.role === "owner";
+                  const isSelf = member.userId === currentUserId;
 
-                return (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium text-slate-900">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-xs font-semibold">
-                          {(member.profile.fullName || member.profile.email)
-                            .charAt(0)
-                            .toUpperCase()}
+                  return (
+                    <TableRow key={member.id}>
+                      <TableCell className="font-medium text-slate-900">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-xs font-semibold">
+                            {(member.profile.fullName || member.profile.email)
+                              .charAt(0)
+                              .toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-900">
+                              {member.profile.fullName || "Team Member"}
+                              {isSelf && (
+                                <span className="ml-1.5 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-normal">
+                                  You
+                                </span>
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-900">
-                            {member.profile.fullName || "Team Member"}
-                            {isSelf && (
-                              <span className="ml-1.5 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-normal">
-                                You
-                              </span>
-                            )}
-                          </p>
-                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 font-mono">
+                        {member.profile.email}
+                      </TableCell>
+                      <TableCell>
+                        <MemberRoleSelector
+                          targetUserId={member.userId}
+                          currentRole={member.role}
+                          isCurrentUserOwner={isOwner}
+                          isTargetOwner={isTargetOwner}
+                        />
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-500">
+                        {new Date(member.createdAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card View (No horizontal overflow at 360px) */}
+          <div className="block sm:hidden divide-y divide-slate-100">
+            {members.map((member) => {
+              const isTargetOwner = member.role === "owner";
+              const isSelf = member.userId === currentUserId;
+
+              return (
+                <div key={member.id} className="p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center text-xs font-semibold shrink-0">
+                      {(member.profile.fullName || member.profile.email)
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-900 truncate">
+                        {member.profile.fullName || "Team Member"}
+                        {isSelf && (
+                          <span className="ml-1.5 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-normal">
+                            You
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[11px] text-slate-500 font-mono truncate">
+                        {member.profile.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-medium">Assigned Role</span>
+                      <div className="mt-1">
+                        <MemberRoleSelector
+                          targetUserId={member.userId}
+                          currentRole={member.role}
+                          isCurrentUserOwner={isOwner}
+                          isTargetOwner={isTargetOwner}
+                        />
                       </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600 font-mono">
-                      {member.profile.email}
-                    </TableCell>
-                    <TableCell>
-                      <MemberRoleSelector
-                        targetUserId={member.userId}
-                        currentRole={member.role}
-                        isCurrentUserOwner={isOwner}
-                        isTargetOwner={isTargetOwner}
-                      />
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">
-                      {new Date(member.createdAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 block font-medium">Joined Workspace</span>
+                      <span className="text-xs text-slate-600 mt-1 block">
+                        {new Date(member.createdAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 

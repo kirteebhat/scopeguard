@@ -55,6 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {/* Toast viewport */}
       <div
         aria-live="polite"
+        aria-atomic="true"
         className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"
       >
         {toasts.map((t) => {
@@ -85,7 +86,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={t.id}
-              role="status"
+              role={t.variant === "error" ? "alert" : "status"}
               className={cn(
                 "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg transition-all animate-in slide-in-from-bottom-2",
                 variantClasses[t.variant || "default"]
