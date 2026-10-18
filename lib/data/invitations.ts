@@ -9,6 +9,7 @@ import {
 export interface FallbackInvitationRecord {
   id: string;
   workspaceId: string;
+  workspaceName?: string;
   email: string;
   role: MemberRole;
   tokenHash: string;
@@ -269,7 +270,7 @@ export async function getInvitationByToken(rawToken: string): Promise<PublicInvi
       const invitedEmailMasked = atIdx > 0 ? email[0] + "***" + email.slice(atIdx) : email;
 
       return {
-        workspaceName: "ScopeGuard Workspace",
+        workspaceName: inv.workspaceName || "ScopeGuard Workspace",
         role: inv.role,
         email: inv.email,
         invitedEmailMasked,
@@ -328,8 +329,30 @@ export async function createWorkspaceInvitation(
       };
     }
 
-    if (error && !isSchemaOrFunctionMissing(error)) {
-      throw new Error(error.message || "Failed to create invitation record.");
+    if (error) {
+      const errMsg = (error.message || "").toLowerCase();
+      // If a pending invitation already exists in the database, refresh it automatically!
+      if (
+        errMsg.includes("unique") ||
+        errMsg.includes("already exists") ||
+        errMsg.includes("idx_workspace_invitations_active_email")
+      ) {
+        const { data: existingRow } = await adminClient
+          .from("workspace_invitations")
+          .select("id")
+          .eq("workspace_id", workspace.id)
+          .eq("email", normEmail)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (existingRow?.id) {
+          return await resendWorkspaceInvitation(existingRow.id);
+        }
+      }
+
+      if (!isSchemaOrFunctionMissing(error)) {
+        throw new Error(error.message || "Failed to create invitation record.");
+      }
     }
   } catch (err) {
     if (!isSchemaOrFunctionMissing(err)) {
@@ -362,12 +385,25 @@ export async function createWorkspaceInvitation(
     // If profiles query fails, proceed
   }
 
-  // Fallback: Check active pending invitation in store
+  // Fallback: If active pending invitation already exists in store, refresh it and re-dispatch!
   for (const inv of fallbackInvitationStore.values()) {
     if (inv.workspaceId === workspace.id && inv.email === normEmail && inv.status === "pending") {
-      if (new Date(inv.expiresAt) > new Date()) {
-        throw new Error(`A pending invitation already exists for this email address.`);
-      }
+      inv.tokenHash = tokenHash;
+      inv.rawToken = rawToken;
+      inv.role = role;
+      inv.workspaceName = workspace.name;
+      inv.expiresAt = expiresAt.toISOString();
+      inv.lastSentAt = new Date().toISOString();
+      inv.sendCount += 1;
+
+      return {
+        invitationId: inv.id,
+        email: normEmail,
+        role,
+        rawToken,
+        inviteUrl: buildInvitationUrl(rawToken),
+        expiresAt,
+      };
     }
   }
 
@@ -376,6 +412,7 @@ export async function createWorkspaceInvitation(
   const record: FallbackInvitationRecord = {
     id,
     workspaceId: workspace.id,
+    workspaceName: workspace.name,
     email: normEmail,
     role,
     tokenHash,

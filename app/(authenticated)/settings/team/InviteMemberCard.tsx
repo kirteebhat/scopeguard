@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { MemberRole } from "@/lib/supabase/database.types";
 import { sendInvitationsAction, BulkInviteActionState } from "@/app/actions/invitations";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
@@ -41,6 +42,7 @@ export function InviteMemberCard({
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const isOwner = currentUserRole === "owner";
+  const router = useRouter();
 
   const handleCopyLink = async (url: string) => {
     try {
@@ -61,8 +63,11 @@ export function InviteMemberCard({
     startTransition(async () => {
       const res = await sendInvitationsAction(null, formData);
       setState(res);
-      if (res.success) {
-        setEmails("");
+      if (res.success || res.results?.some((r) => r.inviteUrl)) {
+        if (res.success) {
+          setEmails("");
+        }
+        router.refresh();
       }
     });
   };

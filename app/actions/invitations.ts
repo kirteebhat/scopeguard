@@ -140,7 +140,9 @@ export async function sendInvitationsAction(
           email,
           status: "failed",
           inviteUrl: created.inviteUrl,
-          message: "Invitation record created, but email dispatch failed. You can share the link manually.",
+          message: emailResult.error
+            ? `Invitation created, but email dispatch failed: ${emailResult.error}`
+            : "Invitation record created, but email dispatch failed. You can share the link manually.",
         });
       }
     } catch (err) {
@@ -258,7 +260,9 @@ export async function resendInvitationAction(
       success: true,
       status: "failed",
       inviteUrl: resent.inviteUrl,
-      message: "New link generated, but email dispatch failed. You can copy the link manually.",
+      message: emailResult.error
+        ? `New link generated, but email dispatch failed: ${emailResult.error}`
+        : "New link generated, but email dispatch failed. You can copy the link manually.",
     };
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : "Failed to resend invitation.";

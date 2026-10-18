@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { WorkspaceInvitationItem } from "@/lib/data/invitations";
 import { resendInvitationAction, revokeInvitationAction } from "@/app/actions/invitations";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
@@ -34,10 +35,16 @@ export function PendingInvitationsList({
   initialInvitations,
   isOwnerOrManager,
 }: PendingInvitationsListProps) {
+  const router = useRouter();
   const [invitations, setInvitations] = useState(initialInvitations);
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  // Synchronize state when page revalidates or passes updated initialInvitations
+  useEffect(() => {
+    setInvitations(initialInvitations);
+  }, [initialInvitations]);
 
   // Modals state
   const [revokeTarget, setRevokeTarget] = useState<WorkspaceInvitationItem | null>(null);
@@ -58,6 +65,7 @@ export function PendingInvitationsList({
         if (res.inviteUrl) {
           setNewLinkResult({ email: invitation.email, url: res.inviteUrl });
         }
+        router.refresh();
       } else {
         setActionError(res.message || "Failed to resend invitation.");
       }
@@ -79,6 +87,7 @@ export function PendingInvitationsList({
           )
         );
         setRevokeTarget(null);
+        router.refresh();
       } else {
         setActionError(res.message || "Failed to revoke invitation.");
       }

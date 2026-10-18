@@ -53,6 +53,7 @@ describe("Workspace Invitations Fallback & Schema Resilience", () => {
       const record: FallbackInvitationRecord = {
         id,
         workspaceId: wsId,
+        workspaceName: "Apex Studio",
         email: "colleague@agency.com",
         role: "member",
         tokenHash,
@@ -73,8 +74,47 @@ describe("Workspace Invitations Fallback & Schema Resilience", () => {
       expect(fallbackInvitationStore.has(id)).toBe(true);
       const retrieved = fallbackInvitationStore.get(id);
       expect(retrieved?.email).toBe("colleague@agency.com");
+      expect(retrieved?.workspaceName).toBe("Apex Studio");
       expect(retrieved?.role).toBe("member");
       expect(retrieved?.status).toBe("pending");
+    });
+
+    it("auto-refreshes token and increments send count when re-inviting existing pending email", () => {
+      const wsId = "ws-123";
+      const { rawToken: token1, tokenHash: hash1, expiresAt } = generateInvitationToken();
+      const id = "inv-1";
+
+      const record: FallbackInvitationRecord = {
+        id,
+        workspaceId: wsId,
+        email: "colleague@agency.com",
+        role: "member",
+        tokenHash: hash1,
+        rawToken: token1,
+        status: "pending",
+        invitedBy: "user-1",
+        inviterName: "Admin User",
+        expiresAt: expiresAt.toISOString(),
+        acceptedAt: null,
+        revokedAt: null,
+        lastSentAt: new Date(Date.now() - 100000).toISOString(),
+        sendCount: 1,
+        createdAt: new Date().toISOString(),
+      };
+
+      fallbackInvitationStore.set(id, record);
+
+      // Simulate re-invitation refresh
+      const { rawToken: token2, tokenHash: hash2, expiresAt: expires2 } = generateInvitationToken();
+      const existing = fallbackInvitationStore.get(id)!;
+      existing.tokenHash = hash2;
+      existing.rawToken = token2;
+      existing.expiresAt = expires2.toISOString();
+      existing.sendCount += 1;
+
+      expect(existing.sendCount).toBe(2);
+      expect(existing.rawToken).toBe(token2);
+      expect(existing.tokenHash).toBe(hash2);
     });
   });
 });
