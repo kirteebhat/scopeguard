@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   Shield,
   CheckCircle2,
@@ -22,6 +23,63 @@ import { Dialog, DialogFooter } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 
+function AnimatedCheckmark({ shouldReduceMotion }: { shouldReduceMotion: boolean | null }) {
+  return (
+    <div className="relative flex items-center justify-center">
+      {!shouldReduceMotion && (
+        <motion.div
+          className="absolute -inset-2 rounded-full bg-emerald-100/60"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: [0.8, 1.25, 1.1], opacity: [0, 0.7, 0] }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+        />
+      )}
+      <svg
+        className="w-10 h-10 text-emerald-600"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <motion.circle
+          cx="12"
+          cy="12"
+          r="10"
+          initial={shouldReduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+        />
+        <motion.path
+          d="m9 12 2 2 4-4"
+          initial={shouldReduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{
+            duration: 0.35,
+            delay: shouldReduceMotion ? 0 : 0.25,
+            ease: "easeOut",
+          }}
+        />
+      </svg>
+    </div>
+  );
+}
+
+function CalmRejectionIcon({ shouldReduceMotion }: { shouldReduceMotion: boolean | null }) {
+  return (
+    <motion.div
+      initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="flex items-center justify-center text-rose-600"
+    >
+      <XCircle className="w-10 h-10 stroke-[2.2]" />
+    </motion.div>
+  );
+}
+
 interface ClientProposalViewProps {
   token: string;
   initialProposal: ResolvedProposal;
@@ -31,6 +89,7 @@ export function ClientProposalView({
   token,
   initialProposal,
 }: ClientProposalViewProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [proposal, setProposal] = useState<ResolvedProposal>(initialProposal);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
@@ -123,7 +182,12 @@ export function ClientProposalView({
     const isApproved = proposal.decision === "approved";
     return (
       <StateShell agencyName={proposal.agencyName} projectName={proposal.projectName}>
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm"
+        >
           <div className="text-center">
             <div
               className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full ${
@@ -131,9 +195,9 @@ export function ClientProposalView({
               } mb-4`}
             >
               {isApproved ? (
-                <CheckCircle2 className="h-9 w-9" />
+                <AnimatedCheckmark shouldReduceMotion={shouldReduceMotion} />
               ) : (
-                <XCircle className="h-9 w-9" />
+                <CalmRejectionIcon shouldReduceMotion={shouldReduceMotion} />
               )}
             </div>
 
@@ -207,7 +271,7 @@ export function ClientProposalView({
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
       </StateShell>
     );
   }

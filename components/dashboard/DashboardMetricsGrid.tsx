@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { motion, useReducedMotion, type Variants } from "motion/react";
 import {
   FolderKanban,
   Clock,
@@ -12,6 +13,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { CountUp } from "@/components/motion/CountUp";
 import type { DashboardMetrics } from "@/lib/data/dashboard";
 
 interface DashboardMetricsGridProps {
@@ -19,99 +21,136 @@ interface DashboardMetricsGridProps {
 }
 
 export function DashboardMetricsGrid({ metrics }: DashboardMetricsGridProps) {
+  const shouldReduceMotion = useReducedMotion();
   const hasMultipleCurrencies = metrics.approvedChargesByCurrency.length > 1;
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.06,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : 8 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: shouldReduceMotion ? 0 : 0.22, ease: "easeOut" },
+    },
+  };
 
   return (
     <div className="space-y-5">
-      {/* 4 Counter Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      {/* 4 Counter Cards with Staggered Entrance */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
+      >
         {/* Active Projects */}
-        <Link href="/projects" className="group block focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl">
-          <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-slate-300">
+        <motion.div variants={itemVariants}>
+          <Link
+            href="/projects"
+            className="group block focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-2xl h-full"
+          >
+            <Card hoverLift className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Active Projects
+                </CardTitle>
+                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+                  <FolderKanban className="w-4 h-4" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    <CountUp value={metrics.activeProjectsCount} />
+                  </span>
+                  <span className="text-xs text-slate-400 flex items-center gap-0.5 group-hover:text-indigo-600 transition-colors">
+                    View <ArrowUpRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  {metrics.totalProjectsCount} total{" "}
+                  {metrics.totalProjectsCount === 1 ? "project" : "projects"} in workspace
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
+
+        {/* Pending Client Approvals */}
+        <motion.div variants={itemVariants}>
+          <Card hoverLift className="h-full">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Active Projects
+                Pending Approvals
               </CardTitle>
-              <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
-                <FolderKanban className="w-4 h-4" />
+              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                <Clock className="w-4 h-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {metrics.activeProjectsCount}
-                </span>
-                <span className="text-xs text-slate-400 flex items-center gap-0.5 group-hover:text-indigo-600 transition-colors">
-                  View <ArrowUpRight className="w-3 h-3" />
-                </span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                <CountUp value={metrics.pendingApprovalsCount} />
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                {metrics.totalProjectsCount} total {metrics.totalProjectsCount === 1 ? "project" : "projects"} in workspace
+                Awaiting client approval decision
               </p>
             </CardContent>
           </Card>
-        </Link>
-
-        {/* Pending Client Approvals */}
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Pending Approvals
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-              <Clock className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {metrics.pendingApprovalsCount}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Awaiting client approval decision
-            </p>
-          </CardContent>
-        </Card>
+        </motion.div>
 
         {/* Approved Change Requests */}
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Approved Changes
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {metrics.approvedChangesCount}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Client-accepted scope expansions
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div variants={itemVariants}>
+          <Card hoverLift className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Approved Changes
+              </CardTitle>
+              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                <CountUp value={metrics.approvedChangesCount} />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Client-accepted scope expansions
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Rejected Change Requests */}
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Rejected Changes
-            </CardTitle>
-            <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
-              <XCircle className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {metrics.rejectedChangesCount}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Declined client scope proposals
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <motion.div variants={itemVariants}>
+          <Card hoverLift className="h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Rejected Changes
+              </CardTitle>
+              <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
+                <XCircle className="w-4 h-4" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                <CountUp value={metrics.rejectedChangesCount} />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Declined client scope proposals
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Approved Additional Scope Charges Card (Multi-Currency Compliant) */}
       <Card className="overflow-hidden border-slate-200">

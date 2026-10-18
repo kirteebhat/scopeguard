@@ -3,10 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import type { ChangeRequestDetail } from "@/lib/data/change-requests";
 import { formatMinorToCurrency } from "@/lib/domain/money";
 import { ProposalPreviewModal } from "./ProposalPreviewModal";
 import { PublishedLinkDialog } from "./PublishedLinkDialog";
+import { ChangeRequestStatusStepper } from "./ChangeRequestStatusStepper";
 import {
   regenerateApprovalTokenAction,
   reviseChangeRequestAction,
@@ -62,6 +64,7 @@ export function ChangeRequestReadOnlyDetail({
   } | null>(null);
 
   const { project, versions } = changeRequest;
+  const shouldReduceMotion = useReducedMotion();
 
   const formattedCost = formatMinorToCurrency(changeRequest.costMinor, project.currency);
   const formattedRate = changeRequest.hourlyRateMinor
@@ -231,6 +234,14 @@ export function ChangeRequestReadOnlyDetail({
           </Button>
         </div>
       </div>
+
+      {/* Workflow Status Stepper */}
+      <ChangeRequestStatusStepper
+        status={changeRequest.status}
+        currentVersion={changeRequest.currentVersion}
+        decidedAt={versions[0]?.decidedAt}
+        decidedByActor={versions[0]?.decidedByActor}
+      />
 
       {/* Error alert if any */}
       {errorMessage && (
@@ -420,14 +431,17 @@ export function ChangeRequestReadOnlyDetail({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {versions.map((ver) => {
+                {versions.map((ver, idx) => {
                   const isCurrent = ver.versionNumber === changeRequest.currentVersion;
                   const isPendingVer =
                     changeRequest.status === "pending_approval" && isCurrent;
 
                   return (
-                    <div
+                    <motion.div
                       key={ver.id}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: idx * 0.04, ease: "easeOut" }}
                       className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                     >
                       <div className="space-y-1">
@@ -484,7 +498,7 @@ export function ChangeRequestReadOnlyDetail({
                           {ver.proposedDeadline ? `Due ${ver.proposedDeadline}` : "No deadline shift"}
                         </span>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </CardContent>

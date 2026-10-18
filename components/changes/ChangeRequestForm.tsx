@@ -28,6 +28,7 @@ import {
 import { calculateDeltaDays } from "@/lib/domain/impact";
 import { LiveImpactPanel } from "./LiveImpactPanel";
 import { ProposalPreviewModal } from "./ProposalPreviewModal";
+import { ChangeRequestStatusStepper } from "./ChangeRequestStatusStepper";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -282,6 +283,12 @@ export function ChangeRequestForm({
 
   return (
     <div className="space-y-6">
+      {/* Workflow Status Stepper */}
+      <ChangeRequestStatusStepper
+        status="draft"
+        currentVersion={initialData?.currentVersion || 1}
+      />
+
       {/* Project Baseline Header Card */}
       <Card className="bg-slate-50 border-slate-200/80">
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">

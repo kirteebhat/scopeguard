@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   TrendingUp,
   Calendar,
@@ -17,11 +18,17 @@ interface ProjectImpactCardProps {
 }
 
 export function ProjectImpactCard({ project }: ProjectImpactCardProps) {
+  const shouldReduceMotion = useReducedMotion();
   const rollup = project.financialRollup;
   const currency = project.currency;
   const hasApprovedExtra = project.approvedExtraMinor > 0;
   const hasPending = project.pendingExtraMinor > 0;
   const hasExtendedDeadline = project.deltaDays > 0;
+
+  // Proportion calculation for the animated impact bar
+  const totalMinor = project.revisedBudgetMinor || project.budgetMinor || 1;
+  const originalRatio = Math.min(100, Math.max(0, Math.round((project.budgetMinor / totalMinor) * 100)));
+  const approvedRatio = hasApprovedExtra ? 100 - originalRatio : 0;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
@@ -58,7 +65,7 @@ export function ProjectImpactCard({ project }: ProjectImpactCardProps) {
       {/* Financial Impact Breakdown: 3 Distinct Labeled Pillars */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-5">
         {/* Pillar 1: Original contract value */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition-all hover:border-slate-300">
           <div className="flex items-center justify-between text-xs font-medium text-slate-500">
             <span className="uppercase tracking-wider font-semibold text-[11px]">
               Original contract value
@@ -75,10 +82,10 @@ export function ProjectImpactCard({ project }: ProjectImpactCardProps) {
 
         {/* Pillar 2: Approved changes */}
         <div
-          className={`rounded-xl border p-4 ${
+          className={`rounded-xl border p-4 transition-all ${
             hasApprovedExtra
-              ? "border-emerald-200 bg-emerald-50/40"
-              : "border-slate-200 bg-slate-50/60"
+              ? "border-emerald-200 bg-emerald-50/40 hover:border-emerald-300"
+              : "border-slate-200 bg-slate-50/60 hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between text-xs font-medium text-slate-500">
@@ -110,10 +117,10 @@ export function ProjectImpactCard({ project }: ProjectImpactCardProps) {
 
         {/* Pillar 3: Estimates (pending) */}
         <div
-          className={`rounded-xl border p-4 ${
+          className={`rounded-xl border p-4 transition-all ${
             hasPending
-              ? "border-amber-200 bg-amber-50/40"
-              : "border-slate-200 bg-slate-50/60"
+              ? "border-amber-200 bg-amber-50/40 hover:border-amber-300"
+              : "border-slate-200 bg-slate-50/60 hover:border-slate-300"
           }`}
         >
           <div className="flex items-center justify-between text-xs font-medium text-slate-500">
@@ -145,8 +152,51 @@ export function ProjectImpactCard({ project }: ProjectImpactCardProps) {
         </div>
       </div>
 
+      {/* Animated Budget Proportion Bar */}
+      <div className="mb-5 space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200/70">
+        <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block" />
+            Original Contract Value: {originalRatio}%
+          </span>
+          {hasApprovedExtra && (
+            <span className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+              Approved Scope Growth: +{approvedRatio}%
+            </span>
+          )}
+        </div>
+
+        <div className="h-3 w-full bg-slate-200/80 rounded-full overflow-hidden flex">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${originalRatio}%` }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+            }
+            className="h-full bg-indigo-600"
+            title={`Original: ${originalRatio}%`}
+          />
+          {hasApprovedExtra && (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${approvedRatio}%` }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }
+              }
+              className="h-full bg-emerald-500"
+              title={`Approved additions: ${approvedRatio}%`}
+            />
+          )}
+        </div>
+      </div>
+
       {/* Revised Total & Timeline Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl bg-indigo-950 text-white p-4 sm:p-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-xl bg-indigo-950 text-white p-4 sm:p-5 shadow-xs">
         {/* Revised Estimated Total */}
         <div>
           <span className="text-xs uppercase tracking-wider font-semibold text-indigo-300 block">

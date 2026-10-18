@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from "lucide-react";
 
@@ -23,6 +24,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const shouldReduceMotion = useReducedMotion();
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -58,58 +60,86 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         aria-atomic="true"
         className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"
       >
-        {toasts.map((t) => {
-          const variantClasses = {
-            default: "bg-slate-900 text-white border-slate-800",
-            success: "bg-emerald-50 text-emerald-900 border-emerald-300",
-            error: "bg-rose-50 text-rose-900 border-rose-300",
-            warning: "bg-amber-50 text-amber-900 border-amber-300",
-            info: "bg-indigo-50 text-indigo-900 border-indigo-200",
-          };
+        <AnimatePresence>
+          {toasts.map((t) => {
+            const variantClasses = {
+              default: "bg-slate-900 text-white border-slate-800",
+              success: "bg-emerald-50 text-emerald-900 border-emerald-300",
+              error: "bg-rose-50 text-rose-900 border-rose-300",
+              warning: "bg-amber-50 text-amber-900 border-amber-300",
+              info: "bg-indigo-50 text-indigo-900 border-indigo-200",
+            };
 
-          const icon = () => {
-            const cls = "w-4 h-4 flex-shrink-0 mt-0.5";
-            switch (t.variant) {
-              case "success":
-                return <CheckCircle2 className={cn(cls, "text-emerald-700")} />;
-              case "error":
-                return <AlertCircle className={cn(cls, "text-rose-700")} />;
-              case "warning":
-                return <AlertTriangle className={cn(cls, "text-amber-700")} />;
-              case "info":
-                return <Info className={cn(cls, "text-indigo-700")} />;
-              default:
-                return null;
-            }
-          };
+            const icon = () => {
+              const cls = "w-4 h-4 shrink-0 mt-0.5";
+              switch (t.variant) {
+                case "success":
+                  return <CheckCircle2 className={cn(cls, "text-emerald-700")} />;
+                case "error":
+                  return <AlertCircle className={cn(cls, "text-rose-700")} />;
+                case "warning":
+                  return <AlertTriangle className={cn(cls, "text-amber-700")} />;
+                case "info":
+                  return <Info className={cn(cls, "text-indigo-700")} />;
+                default:
+                  return null;
+              }
+            };
 
-          return (
-            <div
-              key={t.id}
-              role={t.variant === "error" ? "alert" : "status"}
-              className={cn(
-                "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg transition-all animate-in slide-in-from-bottom-2",
-                variantClasses[t.variant || "default"]
-              )}
-            >
-              {icon()}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-tight">{t.title}</p>
-                {t.description && (
-                  <p className="mt-1 text-xs opacity-90 leading-normal">{t.description}</p>
+            return (
+              <motion.div
+                key={t.id}
+                role={t.variant === "error" ? "alert" : "status"}
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 0, y: 16, scale: 0.95 }
+                }
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 8, scale: 0.95 }
+                }
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.2, ease: "easeOut" }
+                }
+                className={cn(
+                  "relative overflow-hidden pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg",
+                  variantClasses[t.variant || "default"]
                 )}
-              </div>
-              <button
-                type="button"
-                onClick={() => dismiss(t.id)}
-                aria-label="Dismiss notification"
-                className="rounded p-1 opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          );
-        })}
+                {icon()}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{t.title}</p>
+                  {t.description && (
+                    <p className="mt-1 text-xs opacity-90 leading-normal">{t.description}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => dismiss(t.id)}
+                  aria-label="Dismiss notification"
+                  className="rounded p-1 opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Animated progress bar countdown */}
+                {t.duration && t.duration > 0 && !shouldReduceMotion && (
+                  <motion.div
+                    initial={{ width: "100%" }}
+                    animate={{ width: "0%" }}
+                    transition={{ duration: t.duration / 1000, ease: "linear" }}
+                    className="absolute bottom-0 left-0 h-1 bg-current opacity-25"
+                  />
+                )}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );
@@ -122,4 +152,3 @@ export function useToast() {
   }
   return context;
 }
-

@@ -14,4 +14,7 @@ export * from "./EmptyState";
 export * from "./ErrorState";
 export * from "./Spinner";
 export * from "./PageHeader";
+export * from "./Switch";
+export * from "./Checkbox";
+export * from "./Tabs";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -96,53 +97,69 @@ export function Dialog({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-      role="presentation"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Dialog Window */}
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        tabIndex={-1}
-        className={cn(
-          "relative z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto transform rounded-2xl bg-white p-6 text-left shadow-xl transition-all border border-slate-200 focus:outline-none",
-          className
-        )}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close dialog"
-          className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+          role="presentation"
         >
-          <X className="w-4 h-4" />
-        </button>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.18 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            onClick={onClose}
+            aria-hidden="true"
+          />
 
-        {title && (
-          <h2 className="text-lg font-semibold text-slate-900 leading-6 pr-6">
-            {title}
-          </h2>
-        )}
-        {description && (
-          <p className="mt-1 text-sm text-slate-500">{description}</p>
-        )}
+          {/* Dialog Window */}
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            tabIndex={-1}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 8 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
+            }
+            className={cn(
+              "relative z-50 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 text-left shadow-2xl border border-slate-200 focus:outline-none",
+              className
+            )}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close dialog"
+              className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-        <div className="mt-4">{children}</div>
-      </div>
-    </div>
+            {title && (
+              <h2 className="text-lg font-semibold text-slate-900 leading-6 pr-6">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="mt-1 text-sm text-slate-500">{description}</p>
+            )}
+
+            <div className="mt-4">{children}</div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
 

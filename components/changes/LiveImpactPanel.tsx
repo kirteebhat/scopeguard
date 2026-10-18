@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { formatMinorToCurrency } from "@/lib/domain/money";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -32,6 +33,7 @@ export function LiveImpactPanel({
   proposedDeadline,
   deltaDays,
 }: LiveImpactPanelProps) {
+  const shouldReduceMotion = useReducedMotion();
   const currentTotalMinor = originalBudgetMinor + approvedExtraMinor;
   const estimatedNewTotalMinor = currentTotalMinor + costMinor;
 
@@ -66,7 +68,15 @@ export function LiveImpactPanel({
             Pricing Calculation
           </span>
           <p className="text-base font-bold text-indigo-950 font-mono mt-0.5" id="impactFormulaDisplay">
-            {formulaText}
+            <motion.span
+              key={formulaText}
+              initial={shouldReduceMotion ? false : { opacity: 0.5, y: -2 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="inline-block"
+            >
+              {formulaText}
+            </motion.span>
           </p>
           <p className="text-[11px] text-slate-500 mt-1">
             Calculated with deterministic half-up rounding in integer minor units.
@@ -87,11 +97,26 @@ export function LiveImpactPanel({
             </div>
             <div className="flex justify-between items-center text-indigo-700 text-[11px] font-medium">
               <span>Proposed Addition:</span>
-              <span>+{formattedCost}</span>
+              <motion.span
+                key={formattedCost}
+                initial={shouldReduceMotion ? false : { opacity: 0.5, y: -2 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+              >
+                +{formattedCost}
+              </motion.span>
             </div>
             <div className="pt-1.5 border-t border-slate-100 flex justify-between items-center font-bold text-slate-900">
               <span>Estimated Revised Total:</span>
-              <span className="text-sm text-indigo-950">{formattedNewTotal}</span>
+              <motion.span
+                key={formattedNewTotal}
+                initial={shouldReduceMotion ? false : { opacity: 0.5, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className="text-sm text-indigo-950"
+              >
+                {formattedNewTotal}
+              </motion.span>
             </div>
           </div>
 
@@ -113,8 +138,12 @@ export function LiveImpactPanel({
             </div>
             <div className="pt-1.5 border-t border-slate-100 flex justify-between items-center font-bold text-slate-900">
               <span>Schedule Shift:</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded font-semibold ${
+              <motion.span
+                key={deltaDays}
+                initial={shouldReduceMotion ? false : { opacity: 0.5, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className={`text-xs px-2 py-0.5 rounded font-semibold inline-block ${
                   deltaDays > 0
                     ? "bg-amber-50 text-amber-700 border border-amber-200"
                     : "text-slate-600"
@@ -122,7 +151,7 @@ export function LiveImpactPanel({
                 id="impactDeltaDaysDisplay"
               >
                 {deltaDays > 0 ? `+${deltaDays} calendar days` : "No schedule change"}
-              </span>
+              </motion.span>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { useActionState, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { signUpAction, resendVerificationAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 
 export function SignUpForm() {
+  const shouldReduceMotion = useReducedMotion();
   const [state, formAction, isPending] = useActionState(signUpAction, null);
   const [resendState, setResendState] = useState<{
     loading: boolean;
@@ -55,107 +57,122 @@ export function SignUpForm() {
     }
   };
 
-  // If email verification is required, display confirmation guide
-  if (state?.data?.confirmationRequired && state.data.email) {
-    const email = state.data.email;
-    return (
-      <div className="text-center space-y-5 animate-in fade-in-50">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-          <MailCheck className="h-7 w-7" />
-        </div>
-
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">
-            Check your email
-          </h1>
-          <p className="mt-1.5 text-xs text-slate-600">
-            We sent a verification link to{" "}
-            <span className="font-semibold text-slate-900">{email}</span>. Please click the link to confirm your account.
-          </p>
-        </div>
-
-        {/* Resend notification status */}
-        {resendState.message && (
-          <div
-            role="status"
-            className={`p-3 rounded-xl text-xs ${
-              resendState.isError
-                ? "bg-rose-50 text-rose-800 border border-rose-200"
-                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
-            }`}
-          >
-            {resendState.message}
-          </div>
-        )}
-
-        {/* Resend Action */}
-        <div className="pt-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleResend(email)}
-            isLoading={resendState.loading}
-            disabled={resendState.loading}
-            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
-          >
-            Resend verification email
-          </Button>
-        </div>
-
-        {/* Local Development Guidance Box */}
-        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-left text-xs text-slate-600 space-y-2">
-          <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-            <span>Local Development Instructions</span>
-          </div>
-          <p className="leading-relaxed">
-            In local development with Supabase, emails are captured locally. You can view the confirmation message in:
-          </p>
-          <ul className="list-disc pl-4 space-y-1 text-slate-600">
-            <li>
-              <strong>Inbucket Web Mailbox:</strong>{" "}
-              <a
-                href="http://127.0.0.1:54324"
-                target="_blank"
-                rel="noreferrer"
-                className="text-indigo-600 font-medium hover:underline inline-flex items-center gap-0.5"
-              >
-                http://127.0.0.1:54324
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </li>
-            <li>
-              <strong>Supabase CLI:</strong> run{" "}
-              <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">
-                supabase status
-              </code>{" "}
-              to check the local mail server URL.
-            </li>
-          </ul>
-        </div>
-
-        <div className="pt-2">
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center w-full px-4 py-2.5 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-          >
-            Back to Sign In
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const isConfirmation = Boolean(state?.data?.confirmationRequired && state?.data?.email);
+  const email = state?.data?.email || "";
 
   return (
-    <form action={formAction} className="space-y-4" noValidate>
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">
-          Create your agency workspace
-        </h1>
-        <p className="mt-1 text-xs text-slate-600">
-          Get started with client-approved scope changes and budget protection.
-        </p>
-      </div>
+    <AnimatePresence mode="wait">
+      {isConfirmation ? (
+        <motion.div
+          key="confirmation-step"
+          initial={shouldReduceMotion ? false : { opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={shouldReduceMotion ? undefined : { opacity: 0, x: -20 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          className="text-center space-y-5"
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
+            <MailCheck className="h-7 w-7" />
+          </div>
+
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Check your email
+            </h1>
+            <p className="mt-1.5 text-xs text-slate-600">
+              We sent a verification link to{" "}
+              <span className="font-semibold text-slate-900">{email}</span>. Please click the link to confirm your account.
+            </p>
+          </div>
+
+          {/* Resend notification status */}
+          {resendState.message && (
+            <div
+              role="status"
+              className={`p-3 rounded-xl text-xs ${
+                resendState.isError
+                  ? "bg-rose-50 text-rose-800 border border-rose-200"
+                  : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+              }`}
+            >
+              {resendState.message}
+            </div>
+          )}
+
+          {/* Resend Action */}
+          <div className="pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => handleResend(email)}
+              isLoading={resendState.loading}
+              disabled={resendState.loading}
+              leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            >
+              Resend verification email
+            </Button>
+          </div>
+
+          {/* Local Development Guidance Box */}
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-left text-xs text-slate-600 space-y-2">
+            <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+              <span>Local Development Instructions</span>
+            </div>
+            <p className="leading-relaxed">
+              In local development with Supabase, emails are captured locally. You can view the confirmation message in:
+            </p>
+            <ul className="list-disc pl-4 space-y-1 text-slate-600">
+              <li>
+                <strong>Inbucket Web Mailbox:</strong>{" "}
+                <a
+                  href="http://127.0.0.1:54324"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-600 font-medium hover:underline inline-flex items-center gap-0.5"
+                >
+                  http://127.0.0.1:54324
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
+              <li>
+                <strong>Supabase CLI:</strong> run{" "}
+                <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">
+                  supabase status
+                </code>{" "}
+                to check the local mail server URL.
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center w-full px-4 py-2.5 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              Back to Sign In
+            </Link>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.form
+          key="signup-form"
+          initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={shouldReduceMotion ? undefined : { opacity: 0, x: 20 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+          action={formAction}
+          className="space-y-4"
+          noValidate
+        >
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Create your agency workspace
+            </h1>
+            <p className="mt-1 text-xs text-slate-600">
+              Get started with client-approved scope changes and budget protection.
+            </p>
+          </div>
 
       {/* Helpful Existing Confirmed Account Notice with Action Links */}
       {state?.data?.existingAccount ? (
@@ -319,6 +336,8 @@ export function SignUpForm() {
           Sign in
         </Link>
       </div>
-    </form>
+    </motion.form>
+    )}
+    </AnimatePresence>
   );
 }
