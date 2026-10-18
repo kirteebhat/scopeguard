@@ -32,10 +32,13 @@ import {
   Calendar,
   User,
   Compass,
+  Send,
 } from "lucide-react";
 
 import { ActivityFeed } from "@/components/activity/ActivityFeed";
 import type { ActivityLogItem } from "@/lib/data/activity";
+import { SendProposalModal } from "./SendProposalModal";
+import { ProposalEmailHistory } from "./ProposalEmailHistory";
 
 interface ChangeRequestReadOnlyDetailProps {
   changeRequest: ChangeRequestDetail;
@@ -50,6 +53,7 @@ export function ChangeRequestReadOnlyDetail({
 }: ChangeRequestReadOnlyDetailProps) {
   const router = useRouter();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isRevising, setIsRevising] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -322,6 +326,18 @@ export function ChangeRequestReadOnlyDetail({
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => setIsSendModalOpen(true)}
+                disabled={isRegenerating || isRevising || isWithdrawing}
+                leftIcon={<Send className="w-3.5 h-3.5" />}
+                id="sendProposalToClientButton"
+              >
+                Send to Client
+              </Button>
+
+              <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleRegenerateLink}
@@ -551,6 +567,12 @@ export function ChangeRequestReadOnlyDetail({
               </div>
             </CardContent>
           </Card>
+
+          {/* Proposal Email Delivery History */}
+          <ProposalEmailHistory
+            changeRequestId={changeRequest.id}
+            userRole={userRole}
+          />
         </div>
       </div>
 
@@ -666,6 +688,28 @@ export function ChangeRequestReadOnlyDetail({
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Send Proposal to Client Modal */}
+      <SendProposalModal
+        isOpen={isSendModalOpen}
+        onClose={() => setIsSendModalOpen(false)}
+        changeRequestId={changeRequest.id}
+        projectName={project.name}
+        workspaceName=""
+        changeRequestTitle={changeRequest.title}
+        changeRequestDescription={changeRequest.description}
+        additionalCostFormatted={formattedCost}
+        currency={project.currency}
+        versionNumber={changeRequest.currentVersion || 1}
+        originalDeadline={project.originalDeadline}
+        proposedDeadline={changeRequest.proposedDeadline}
+        defaultRecipientEmail={project.clientContactEmail}
+        defaultRecipientName={project.clientContactName}
+        mode="regenerate_link"
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

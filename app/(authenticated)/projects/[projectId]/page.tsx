@@ -318,6 +318,31 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
                 <span className="font-semibold text-slate-800 capitalize">{project.status}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Client Organization</span>
+                <span className="font-semibold text-slate-800">{project.clientName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Primary Contact</span>
+                <span className="font-semibold text-slate-800">
+                  {project.clientContactName || (
+                    <Link
+                      href={`/projects/${project.id}/settings`}
+                      className="text-indigo-600 hover:underline font-normal text-[11px]"
+                    >
+                      + Add contact
+                    </Link>
+                  )}
+                </span>
+              </div>
+              {project.clientContactEmail && (
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Contact Email</span>
+                  <span className="font-mono text-slate-700 text-[11px] truncate max-w-[180px]">
+                    {project.clientContactEmail}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500">Currency</span>
                 <span className="font-semibold text-slate-800">{project.currency}</span>
               </div>

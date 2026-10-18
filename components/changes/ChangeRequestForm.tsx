@@ -81,6 +81,7 @@ export function ChangeRequestForm({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [publishedLink, setPublishedLink] = useState<{
     shareUrl: string;
+    rawToken?: string;
     expiresAt: string;
     versionNumber: number;
   } | null>(null);
@@ -100,6 +101,7 @@ export function ChangeRequestForm({
 
       setPublishedLink({
         shareUrl: res.data.shareUrl,
+        rawToken: res.data.rawToken,
         expiresAt: res.data.expiresAt,
         versionNumber: res.data.versionNumber,
       });
@@ -722,8 +724,18 @@ export function ChangeRequestForm({
           isOpen={true}
           onClose={handleClosePublishedDialog}
           shareUrl={publishedLink.shareUrl}
+          rawToken={publishedLink.rawToken}
           expiresAt={publishedLink.expiresAt}
           versionNumber={publishedLink.versionNumber}
+          changeRequestId={initialData?.id}
+          projectName={project.name}
+          changeRequestTitle={watchedTitle}
+          changeRequestDescription={watchedDescription}
+          additionalCostFormatted={formatMinorToCurrency(liveCostMinor, project.currency)}
+          currency={project.currency}
+          proposedDeadline={watchedDeadline || null}
+          clientContactEmail={project.clientContactEmail}
+          clientContactName={project.clientContactName}
         />
       )}
     </div>

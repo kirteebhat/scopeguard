@@ -29,6 +29,19 @@ const projectSettingsSchema = z
       .trim()
       .min(2, "Client name must be at least 2 characters")
       .max(100, "Client name cannot exceed 100 characters"),
+    clientContactName: z
+      .string()
+      .trim()
+      .max(100, "Contact name cannot exceed 100 characters")
+      .optional()
+      .or(z.literal("")),
+    clientContactEmail: z
+      .string()
+      .trim()
+      .email("Enter a valid email address")
+      .max(255, "Email cannot exceed 255 characters")
+      .optional()
+      .or(z.literal("")),
     status: z.enum(["active", "completed", "on_hold", "archived"]),
     description: z.string().trim().max(2000, "Description cannot exceed 2000 characters").optional(),
     currency: z.string().length(3, "Select a valid 3-letter currency code"),
@@ -85,6 +98,8 @@ export function ProjectSettingsForm({ project, userRole }: ProjectSettingsFormPr
     defaultValues: {
       name: project.name,
       clientName: project.clientName,
+      clientContactName: project.clientContactName || "",
+      clientContactEmail: project.clientContactEmail || "",
       status: project.status,
       description: project.description || "",
       currency: project.currency,
@@ -105,6 +120,8 @@ export function ProjectSettingsForm({ project, userRole }: ProjectSettingsFormPr
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("clientName", data.clientName);
+    formData.append("clientContactName", data.clientContactName || "");
+    formData.append("clientContactEmail", data.clientContactEmail || "");
     formData.append("status", data.status);
     formData.append("description", data.description || "");
     formData.append("startDate", data.startDate);
@@ -183,6 +200,36 @@ export function ProjectSettingsForm({ project, userRole }: ProjectSettingsFormPr
                 placeholder="e.g. Acme Corporation"
                 disabled={isPending}
                 id="clientNameInput"
+              />
+            </FormField>
+          </div>
+
+          {/* Client Contact Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            <FormField
+              label="Primary Client Contact Name"
+              error={errors.clientContactName?.message}
+              hint="Lead reviewer for proposal approvals (optional)"
+            >
+              <Input
+                {...register("clientContactName")}
+                placeholder="e.g. Jonathan Miller"
+                disabled={isPending}
+                id="clientContactNameInput"
+              />
+            </FormField>
+
+            <FormField
+              label="Primary Client Contact Email"
+              error={errors.clientContactEmail?.message}
+              hint="Pre-fills proposal delivery recipient"
+            >
+              <Input
+                type="email"
+                {...register("clientContactEmail")}
+                placeholder="e.g. jonathan@acme.com"
+                disabled={isPending}
+                id="clientContactEmailInput"
               />
             </FormField>
           </div>

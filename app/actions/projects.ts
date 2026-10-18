@@ -60,9 +60,14 @@ export async function createProjectAction(
     };
   }
 
+  const clientContactName = formData.get("clientContactName")?.toString();
+  const clientContactEmail = formData.get("clientContactEmail")?.toString();
+
   const rawPayload = {
     name,
     clientName,
+    clientContactName: clientContactName?.trim() || null,
+    clientContactEmail: clientContactEmail?.trim() || null,
     description: description.trim() || null,
     currency,
     budgetMinor,
@@ -112,6 +117,8 @@ export async function updateProjectAction(
 ): Promise<ActionState> {
   const name = formData.get("name")?.toString();
   const clientName = formData.get("clientName")?.toString();
+  const clientContactName = formData.get("clientContactName")?.toString();
+  const clientContactEmail = formData.get("clientContactEmail")?.toString();
   const description = formData.get("description")?.toString();
   const status = formData.get("status")?.toString() as ProjectStatus | undefined;
   const currency = formData.get("currency")?.toString();
@@ -123,6 +130,8 @@ export async function updateProjectAction(
   const updateData: {
     name?: string;
     clientName?: string;
+    clientContactName?: string | null;
+    clientContactEmail?: string | null;
     description?: string | null;
     status?: ProjectStatus;
     currency?: string;
@@ -134,6 +143,8 @@ export async function updateProjectAction(
 
   if (name !== undefined) updateData.name = name;
   if (clientName !== undefined) updateData.clientName = clientName;
+  if (clientContactName !== undefined) updateData.clientContactName = clientContactName.trim() || null;
+  if (clientContactEmail !== undefined) updateData.clientContactEmail = clientContactEmail.trim() || null;
   if (description !== undefined) updateData.description = description.trim() || null;
   if (status !== undefined) updateData.status = status;
   if (startDate !== undefined) updateData.startDate = startDate;

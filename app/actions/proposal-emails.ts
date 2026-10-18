@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/data/auth-context";
 import { getChangeRequestById, regenerateApprovalToken } from "@/lib/data/change-requests";
 import { setProjectClientContact } from "@/lib/data/projects";
+import { listProposalEmails, type ProposalEmailHistoryItem } from "@/lib/data/proposal-emails";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import {
   sendProposalToClientSchema,
@@ -316,6 +317,24 @@ export async function setProjectClientContactAction(
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to update client contact.",
+    };
+  }
+}
+
+/**
+ * Server Action: Fetches delivery history of proposal emails for a change request.
+ * Authorized: Owners and managers only.
+ */
+export async function fetchProposalEmailHistoryAction(
+  changeRequestId: string
+): Promise<{ success: boolean; data?: ProposalEmailHistoryItem[]; message?: string }> {
+  try {
+    const data = await listProposalEmails(changeRequestId);
+    return { success: true, data };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to load proposal dispatch history.",
     };
   }
 }
