@@ -22,6 +22,7 @@ ScopeGuard is a specialized B2B platform designed to prevent agency revenue leak
 | **Change Requests Drafting & Preview** | **DONE** | Playwright E2E in `tests/e2e/change-requests.spec.ts` (confidential internal notes omitted from client preview). |
 | **Publishing, Revise & Withdraw** | **DONE** | Integration tests in `tests/integration/change-requests-workflow.test.ts` + Playwright E2E in `tests/e2e/change-requests-workflow.spec.ts`. |
 | **Public Mobile Client Approval Portal** | **DONE** | Playwright E2E in `tests/e2e/client-approval.spec.ts` (360px viewport, touch buttons, double-submit protection). |
+| **Workspace Team Invitations** | **DONE** | 13 integration tests in `tests/integration/invitations-migration.test.ts` + 19 unit tests in `tests/unit/invitations-validation.test.ts` (cryptographic tokens, role permissions, strict email match, Resend email dispatch, atomic acceptance, revoke/resend). |
 | **End-to-End Multi-Context User Journey** | **DONE** | Playwright E2E in `tests/e2e/full-journey.spec.ts` (isolated unauthenticated browser context approval, rejection, and revision revocation). |
 | **Accessibility (WCAG AA) & Mobile UI** | **DONE** | Axe-Core Playwright test in `tests/e2e/accessibility.spec.ts` (10/10 passing, focus traps, zero overflow at 360px). |
 | **Database-Backed Rate Limiting** | **DONE** | 5 unit tests in `tests/unit/rate-limit.test.ts` (IP-hash and token prefix throttling on `/approve/[token]`). |
@@ -66,7 +67,8 @@ Configure the environment variables according to the table below:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** | Client & Server | The public anonymous API key for browser-scoped Supabase client requests governed by RLS. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server Only** | Administrative service-role key. **NEVER expose to client code.** Used solely in backend actions for public approvals. |
 | `NEXT_PUBLIC_APP_URL` | **Yes** | Client & Server | Base URL of the deployment (e.g., `http://localhost:3000` or `https://scopeguard.vercel.app`). |
-| `RESEND_API_KEY` | No | Server Only | Optional API key for Resend email integration (P1 roadmap). |
+| `RESEND_API_KEY` | No | Server Only | Optional API key for Resend email dispatch (for team invitations). If unconfigured, invitations provide an honest manual copy link fallback. |
+| `EMAIL_FROM` | No | Server Only | Sender address for transactional emails (defaults to `ScopeGuard <notifications@scopeguard.agency>`). |
 
 ---
 
@@ -76,6 +78,7 @@ ScopeGuard provides idempotent SQL migrations in `supabase/migrations/`:
 1. `20261011120000_initial_schema.sql` (Profiles, workspaces, members, projects, deliverables, constraints)
 2. `20261011130000_change_requests_and_approvals.sql` (Change requests, version snapshots, tokens, approvals, activity logs, stored procedures)
 3. `20261011140000_row_level_security.sql` (Default deny RLS policies, helper functions)
+4. `20261018230000_workspace_invitations.sql` (Workspace invitations table, RLS, cryptographic tokens, atomic acceptance stored procedures)
 
 ### Option A: Local Supabase CLI
 ```bash

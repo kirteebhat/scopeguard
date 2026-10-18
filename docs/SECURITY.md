@@ -55,9 +55,10 @@ crypto.randomBytes(32) (256-bit CSPRNG)
 
 ## 4. Row-Level Security (RLS) & Multi-Tenant Boundaries
 
-All 11 public database tables have RLS enabled with default deny:
+All 12 public database tables have RLS enabled with default deny:
 - `workspaces`
 - `workspace_members`
+- `workspace_invitations`
 - `profiles`
 - `projects`
 - `deliverables`
@@ -70,6 +71,7 @@ All 11 public database tables have RLS enabled with default deny:
 
 ### Access Rules
 - **Authenticated Agency Users:** Can only read and mutate rows where `workspace_id` matches their verified active workspace membership (`is_workspace_member(workspace_id)`).
+- **Workspace Invitations:** Direct client inserts, updates, and deletes are disabled. Stored `token_hash` values are revoked from `anon` selection. Owner and manager roles can list workspace invitations. Acceptance executes via atomic `accept_invitation` RPC verifying strict email matching and `for update` concurrency locks.
 - **Public / Anonymous Role:** Direct `SELECT`, `INSERT`, `UPDATE`, and `DELETE` access is completely denied (`USING (false)`). Public approval interactions occur solely through `SECURITY DEFINER` stored procedures (`get_proposal_by_token` and `submit_decision`) that execute with restricted, explicit search paths (`search_path = public, pg_temp`).
 
 ---

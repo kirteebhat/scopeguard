@@ -180,4 +180,30 @@ describe("Team Invitations Validation & Token Engine", () => {
       expect(text).toContain("ScopeGuard protects agency profit margins");
     });
   });
+
+  describe("singleInvitationSchema & acceptInvitationSchema", () => {
+    it("accepts valid single invitation with manager and member roles", () => {
+      const res1 = singleInvitationSchema.safeParse({ email: "team@agency.com", role: "member" });
+      expect(res1.success).toBe(true);
+
+      const res2 = singleInvitationSchema.safeParse({ email: "lead@agency.com", role: "manager" });
+      expect(res2.success).toBe(true);
+    });
+
+    it("rejects illegal owner role in single invitation", () => {
+      const res = singleInvitationSchema.safeParse({ email: "team@agency.com", role: "owner" });
+      expect(res.success).toBe(false);
+    });
+
+    it("accepts valid token in acceptInvitationSchema", () => {
+      const res = acceptInvitationSchema.safeParse({ token: "valid_cryptographic_token_32chars" });
+      expect(res.success).toBe(true);
+    });
+
+    it("rejects short, empty, or missing tokens in acceptInvitationSchema", () => {
+      expect(acceptInvitationSchema.safeParse({ token: "" }).success).toBe(false);
+      expect(acceptInvitationSchema.safeParse({ token: "tiny" }).success).toBe(false);
+      expect(acceptInvitationSchema.safeParse({}).success).toBe(false);
+    });
+  });
 });

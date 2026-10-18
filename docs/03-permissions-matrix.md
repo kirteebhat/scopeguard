@@ -25,7 +25,10 @@
 | **Team** | View team members | ✅ | ✅ | ✅ | ❌ | ❌ | RLS (`workspace_members` SELECT policy) |
 | | Change member role | ✅ | ❌ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner'])`) & RLS UPDATE |
 | | Remove member | ✅ | ❌ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner'])`) & RLS DELETE |
-| | Invite member (P1) | ✅ | ❌ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner'])`) |
+| | Invite member (Manager role) | ✅ | ❌ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner'])`) & RPC `create_invitation` |
+| | Invite member (Member role) | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner', 'manager'])`) & RPC `create_invitation` |
+| | Resend / Revoke invitation | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner', 'manager'])`) & RPC `resend/revoke_invitation` |
+| | Accept invitation (`/invite/[token]`) | ❌ | ❌ | ❌ | ❌ | ✅ (Bound invitee) | RPC `accept_invitation` (Strict email match & atomic lock) |
 | **Projects** | View project list & detail | ✅ | ✅ | ✅ | ❌ | ❌ | RLS (`projects` SELECT where `is_workspace_member`) |
 | | Create new project | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner','manager'])`) & RLS |
 | | Edit non-financial details (name, client) | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner','manager'])`) & RLS |
