@@ -63,24 +63,24 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <AnimatePresence>
           {toasts.map((t) => {
             const variantClasses = {
-              default: "bg-slate-900 text-white border-slate-800 dark:bg-slate-800 dark:border-slate-700",
-              success: "bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800",
-              error: "bg-rose-50 text-rose-900 border-rose-300 dark:bg-rose-950/80 dark:text-rose-200 dark:border-rose-800",
-              warning: "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800",
-              info: "bg-indigo-50 text-indigo-900 border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-200 dark:border-indigo-800",
+              default: "bg-slate-900 text-white border-slate-800",
+              success: "bg-emerald-50 text-emerald-900 border-emerald-300",
+              error: "bg-rose-50 text-rose-900 border-rose-300",
+              warning: "bg-amber-50 text-amber-900 border-amber-300",
+              info: "bg-indigo-50 text-indigo-900 border-indigo-200",
             };
 
             const icon = () => {
               const cls = "w-4 h-4 shrink-0 mt-0.5";
               switch (t.variant) {
                 case "success":
-                  return <CheckCircle2 className={cn(cls, "text-emerald-700 dark:text-emerald-400")} />;
+                  return <CheckCircle2 className={cn(cls, "text-emerald-700")} />;
                 case "error":
-                  return <AlertCircle className={cn(cls, "text-rose-700 dark:text-rose-400")} />;
+                  return <AlertCircle className={cn(cls, "text-rose-700")} />;
                 case "warning":
-                  return <AlertTriangle className={cn(cls, "text-amber-700 dark:text-amber-400")} />;
+                  return <AlertTriangle className={cn(cls, "text-amber-700")} />;
                 case "info":
-                  return <Info className={cn(cls, "text-indigo-700 dark:text-indigo-400")} />;
+                  return <Info className={cn(cls, "text-indigo-700")} />;
                 default:
                   return null;
               }

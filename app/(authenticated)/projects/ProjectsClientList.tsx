@@ -20,12 +20,7 @@ import {
   TrendingUp,
   FileQuestion,
   Plus,
-  LayoutGrid,
-  List,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { SpotlightCard } from "@/components/motion/SpotlightCard";
-import { SegmentedImpactBar } from "@/components/projects/SegmentedImpactBar";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
@@ -48,21 +43,12 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
   const [sortBy, setSortBy] = useState<SortOption>(
     () => (searchParams.get("sort") as SortOption) || "newest"
   );
-  const [viewMode, setViewMode] = useState<"list" | "grid">(
-    () => (searchParams.get("view") === "grid" ? "grid" : "list")
-  );
 
-  const updateUrlParams = (
-    newSearch: string,
-    newStatus: string,
-    newSort: string,
-    newView: string = viewMode
-  ) => {
+  const updateUrlParams = (newSearch: string, newStatus: string, newSort: string) => {
     const params = new URLSearchParams();
     if (newSearch.trim()) params.set("search", newSearch.trim());
     if (newStatus && newStatus !== "all") params.set("status", newStatus);
     if (newSort && newSort !== "newest") params.set("sort", newSort);
-    if (newView && newView !== "list") params.set("view", newView);
     const query = params.toString();
     router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
   };
@@ -80,11 +66,6 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
   const handleSortChange = (value: SortOption) => {
     setSortBy(value);
     updateUrlParams(search, statusFilter, value);
-  };
-
-  const handleViewModeChange = (mode: "list" | "grid") => {
-    setViewMode(mode);
-    updateUrlParams(search, statusFilter, sortBy, mode);
   };
 
   const handleClearFilters = () => {
@@ -181,39 +162,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* List vs Grid Switcher */}
-          <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-800">
-            <button
-              type="button"
-              onClick={() => handleViewModeChange("list")}
-              className={cn(
-                "p-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === "list"
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-              )}
-              aria-label="List view"
-              title="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange("grid")}
-              className={cn(
-                "p-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === "grid"
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-              )}
-              aria-label="Grid view"
-              title="Grid view"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-          </div>
-
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 min-w-[140px]">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <Select
@@ -252,7 +201,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
 
       {/* Zero matches state */}
       {filteredProjects.length === 0 ? (
-        <Card className="dark:bg-slate-900 dark:border-slate-800">
+        <Card>
           <CardContent className="pt-8 pb-8">
             <EmptyState
               icon={<Search className="w-8 h-8 text-slate-400" />}
@@ -269,61 +218,8 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             />
           </CardContent>
         </Card>
-      ) : viewMode === "grid" ? (
-        /* Spotlight Card Grid View */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProjects.map((project) => (
-            <SpotlightCard
-              key={project.id}
-              className="p-5 flex flex-col justify-between h-full dark:border-slate-800 dark:bg-slate-900"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <Link
-                    href={`/projects/${project.id}`}
-                    className="font-bold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 text-sm line-clamp-1 transition-colors"
-                  >
-                    {project.name}
-                  </Link>
-                  {getStatusBadge(project.status)}
-                </div>
-
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Client:{" "}
-                  <strong className="text-slate-700 dark:text-slate-200 font-medium">
-                    {project.clientName}
-                  </strong>
-                </p>
-
-                {/* Segmented Impact Bar Visualization */}
-                <div className="pt-2">
-                  <SegmentedImpactBar
-                    baselineAmount={project.budgetMinor}
-                    approvedAmount={project.approvedExtraMinor}
-                    currency={project.currency}
-                    compact
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-500 dark:text-slate-400">
-                  Due:{" "}
-                  <strong className="text-slate-700 dark:text-slate-200">
-                    {project.revisedDeadline || project.originalDeadline}
-                  </strong>
-                </span>
-                <Link href={`/projects/${project.id}`}>
-                  <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                    View
-                  </Button>
-                </Link>
-              </div>
-            </SpotlightCard>
-          ))}
-        </div>
       ) : (
-        /* Project Cards List View */
+        /* Project Cards Grid / Table */
         <div className="grid grid-cols-1 gap-3.5">
           {filteredProjects.map((project) => {
             const hasApprovedExtra = project.approvedExtraMinor > 0;
@@ -333,43 +229,43 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             return (
               <div
                 key={project.id}
-                className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-4 sm:p-5 hover:border-indigo-300 dark:hover:border-slate-700 hover:shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 hover:border-indigo-300 hover:shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 {/* Left: Project identity & client */}
                 <div className="space-y-1.5 min-w-0 md:max-w-md">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Link
                       href={`/projects/${project.id}`}
-                      className="text-base font-semibold text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors truncate"
+                      className="text-base font-semibold text-slate-900 hover:text-indigo-600 transition-colors truncate"
                     >
                       {project.name}
                     </Link>
                     {getStatusBadge(project.status)}
                     {hasPending && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                         <FileQuestion className="w-3 h-3" />
                         {project.pendingRequestsCount} Pending Proposal
                         {project.pendingRequestsCount > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                    <span>Client: <strong className="text-slate-700 dark:text-slate-200 font-medium">{project.clientName}</strong></span>
+                  <p className="text-xs text-slate-500 flex items-center gap-2">
+                    <span>Client: <strong className="text-slate-700 font-medium">{project.clientName}</strong></span>
                     <span>•</span>
-                    <span>Currency: <strong className="text-slate-700 dark:text-slate-200 font-medium">{project.currency}</strong></span>
+                    <span>Currency: <strong className="text-slate-700 font-medium">{project.currency}</strong></span>
                   </p>
                 </div>
 
                 {/* Center / Financials */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs shrink-0 py-2 md:py-0 border-y md:border-y-0 border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs shrink-0 py-2 md:py-0 border-y md:border-y-0 border-slate-100">
                   {/* Budget */}
                   <div>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-medium">Original Budget</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                    <span className="text-[11px] text-slate-400 block font-medium">Original Budget</span>
+                    <span className="font-semibold text-slate-800 text-sm">
                       {formatMinorToCurrency(project.budgetMinor, project.currency)}
                     </span>
                     {hasApprovedExtra && (
-                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 mt-0.5">
+                      <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-0.5 mt-0.5">
                         <TrendingUp className="w-3 h-3" />
                         +{formatMinorToCurrency(project.approvedExtraMinor, project.currency)}
                       </span>
@@ -378,34 +274,34 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
 
                   {/* Revised Total */}
                   <div>
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-medium">Revised Total</span>
-                    <span className="font-bold text-slate-950 dark:text-white text-sm">
+                    <span className="text-[11px] text-slate-400 block font-medium">Revised Total</span>
+                    <span className="font-bold text-slate-950 text-sm">
                       {formatMinorToCurrency(project.revisedBudgetMinor, project.currency)}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
                       {hasApprovedExtra ? "Includes approved changes" : "Baseline"}
                     </span>
                   </div>
 
                   {/* Timeline */}
                   <div className="col-span-2 sm:col-span-1">
-                    <span className="text-[11px] text-slate-400 dark:text-slate-500 block font-medium">Deadline</span>
+                    <span className="text-[11px] text-slate-400 block font-medium">Deadline</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                      <span className="font-semibold text-slate-800 text-sm">
                         {project.revisedDeadline || project.originalDeadline}
                       </span>
                       {hasExtendedDeadline && (
-                        <span className="text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 px-1.5 py-0.2 rounded">
+                        <span className="text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 px-1.5 py-0.2 rounded">
                           +{project.deltaDays}d
                         </span>
                       )}
                     </div>
                     {hasExtendedDeadline ? (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5">
+                      <span className="text-[10px] text-slate-400 block mt-0.5">
                         Orig: {project.originalDeadline}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 flex items-center gap-1">
+                      <span className="text-[10px] text-slate-400 block mt-0.5 flex items-center gap-1">
                         <Calendar className="w-3 h-3" /> On Track
                       </span>
                     )}

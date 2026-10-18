@@ -17,6 +17,4 @@ export * from "./PageHeader";
 export * from "./Switch";
 export * from "./Checkbox";
 export * from "./Tabs";
-export * from "./ThemeToggle";
-export * from "./CopyButton";
 

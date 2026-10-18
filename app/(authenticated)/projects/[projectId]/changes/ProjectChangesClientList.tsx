@@ -21,11 +21,7 @@ import {
   CheckCircle2,
   Layers,
   ArrowRight,
-  Table as TableIcon,
-  Kanban,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ChangeRequestBoardView } from "@/components/changes/ChangeRequestBoardView";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
@@ -48,7 +44,6 @@ export function ProjectChangesClientList({
   const [statusFilter, setStatusFilter] = useState<string>(
     () => searchParams.get("status") || "all"
   );
-  const [viewMode, setViewMode] = useState<"table" | "board">("table");
 
   const updateUrlParams = (newSearch: string, newStatus: string) => {
     const params = new URLSearchParams();
@@ -208,38 +203,6 @@ export function ProjectChangesClientList({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Table vs Board View Toggle */}
-          <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-50 dark:bg-slate-800">
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "p-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === "table"
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-              )}
-              aria-label="Table view"
-              title="Table view"
-            >
-              <TableIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("board")}
-              className={cn(
-                "p-1.5 rounded-md text-xs font-medium transition-colors",
-                viewMode === "board"
-                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-              )}
-              aria-label="Board view"
-              title="Board view"
-            >
-              <Kanban className="w-4 h-4" />
-            </button>
-          </div>
-
           <div className="flex items-center gap-1.5 min-w-[150px]">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <Select
@@ -262,7 +225,7 @@ export function ProjectChangesClientList({
 
       {/* Filtered Content or Zero Matches */}
       {filteredChanges.length === 0 ? (
-        <Card className="dark:bg-slate-900 dark:border-slate-800">
+        <Card>
           <CardContent className="pt-8 pb-8">
             <EmptyState
               icon={<Search className="w-8 h-8 text-slate-400" />}
@@ -280,18 +243,13 @@ export function ProjectChangesClientList({
             />
           </CardContent>
         </Card>
-      ) : viewMode === "board" ? (
-        <ChangeRequestBoardView
-          changes={filteredChanges}
-          currency={project.currency}
-        />
       ) : (
-        <Card className="overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+        <Card className="overflow-hidden">
           {/* Desktop Table View (Hidden on mobile) */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-850 text-slate-500 dark:text-slate-400 font-medium">
+                <tr className="border-b border-slate-200/80 bg-slate-50/75 text-slate-500 font-medium">
                   <th className="py-3 px-4">Proposal</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Pricing</th>
@@ -300,27 +258,27 @@ export function ProjectChangesClientList({
                   <th className="py-3 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-slate-100">
                 {filteredChanges.map((cr) => (
-                  <tr key={cr.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-850/60 transition-colors">
+                  <tr key={cr.id} className="hover:bg-slate-50/60 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                      <div className="font-semibold text-slate-900 flex items-center gap-2">
                         <span>{cr.title}</span>
                         {cr.currentVersion && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
                             v{cr.currentVersion}
                           </span>
                         )}
                       </div>
                       {cr.deliverableTitle && (
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                           <Layers className="w-3 h-3 text-indigo-500" />
                           <span>{cr.deliverableTitle}</span>
                         </div>
                       )}
                     </td>
                     <td className="py-3.5 px-4">{getStatusBadge(cr.status)}</td>
-                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 capitalize">
+                    <td className="py-3.5 px-4 text-slate-600 capitalize">
                       {cr.pricingMethod === "hourly"
                         ? `${cr.estimatedHours || 0} hrs @ ${
                             cr.hourlyRateMinor
@@ -329,10 +287,10 @@ export function ProjectChangesClientList({
                           }`
                         : "Fixed Fee"}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">
                       {formatMinorToCurrency(cr.costMinor, project.currency)}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
+                    <td className="py-3.5 px-4 text-slate-600">
                       {cr.proposedDeadline || "No deadline shift"}
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -349,21 +307,21 @@ export function ProjectChangesClientList({
           </div>
 
           {/* Mobile Card View (Collapsed on mobile, no horizontal overflow) */}
-          <div className="block sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          <div className="block sm:hidden divide-y divide-slate-100">
             {filteredChanges.map((cr) => (
               <div key={cr.id} className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-slate-900 dark:text-white text-sm">{cr.title}</span>
+                      <span className="font-bold text-slate-900 text-sm">{cr.title}</span>
                       {cr.currentVersion && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
                           v{cr.currentVersion}
                         </span>
                       )}
                     </div>
                     {cr.deliverableTitle && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                      <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                         <Layers className="w-3 h-3 text-indigo-500" />
                         <span>{cr.deliverableTitle}</span>
                       </div>
@@ -372,24 +330,24 @@ export function ProjectChangesClientList({
                   <div className="shrink-0">{getStatusBadge(cr.status)}</div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl">
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl">
                   <div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Pricing Method</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200 capitalize">
+                    <span className="text-[11px] text-slate-500 block">Pricing Method</span>
+                    <span className="font-medium text-slate-800 capitalize">
                       {cr.pricingMethod === "hourly"
                         ? `${cr.estimatedHours || 0} hrs`
                         : "Fixed Fee"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Additional Cost</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="text-[11px] text-slate-500 block">Additional Cost</span>
+                    <span className="font-bold text-slate-900">
                       {formatMinorToCurrency(cr.costMinor, project.currency)}
                     </span>
                   </div>
-                  <div className="col-span-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Proposed Deadline</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-200">
+                  <div className="col-span-2 pt-1 border-t border-slate-200/60">
+                    <span className="text-[11px] text-slate-500 block">Proposed Deadline</span>
+                    <span className="font-medium text-slate-800">
                       {cr.proposedDeadline || "No deadline shift"}
                     </span>
                   </div>

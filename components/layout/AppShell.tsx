@@ -5,9 +5,6 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { MobileNav } from "./MobileNav";
 import { ToastProvider } from "@/components/ui/Toast";
-import { CommandPalette } from "@/components/ui/CommandPalette";
-import { KeyboardShortcutsModal } from "@/components/ui/KeyboardShortcutsModal";
-import { NotificationPanel } from "./NotificationPanel";
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -27,26 +24,12 @@ export function AppShell({
   onLogout,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
   const handleCloseMobileNav = React.useCallback(() => setIsMobileNavOpen(false), []);
   const handleOpenMobileNav = React.useCallback(() => setIsMobileNavOpen(true), []);
 
-  const handleOpenCommandPalette = React.useCallback(() => {
-    setIsCommandPaletteOpen(true);
-  }, []);
-
-  const handleOpenNotifications = React.useCallback(() => {
-    setIsNotificationsOpen(true);
-    setUnreadCount(0);
-  }, []);
-
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
+      <div className="min-h-screen bg-slate-50 flex flex-col">
         {/* Skip to Content link for Keyboard Accessibility */}
         <a href="#main-content" className="skip-to-content">
           Skip to main content
@@ -79,9 +62,6 @@ export function AppShell({
               onOpenMobileNav={handleOpenMobileNav}
               workspaceName={workspaceName}
               pageTitle={pageTitle}
-              onOpenCommandPalette={handleOpenCommandPalette}
-              onOpenNotifications={handleOpenNotifications}
-              unreadCount={unreadCount}
             />
 
             <main
@@ -93,21 +73,6 @@ export function AppShell({
             </main>
           </div>
         </div>
-
-        {/* Global Modals & Drawers */}
-        <CommandPalette
-          open={isCommandPaletteOpen}
-          onOpenChange={setIsCommandPaletteOpen}
-        />
-        <KeyboardShortcutsModal
-          open={isShortcutsOpen}
-          onOpenChange={setIsShortcutsOpen}
-        />
-        <NotificationPanel
-          open={isNotificationsOpen}
-          onClose={() => setIsNotificationsOpen(false)}
-          onMarkAllAsRead={() => setUnreadCount(0)}
-        />
       </div>
     </ToastProvider>
   );
