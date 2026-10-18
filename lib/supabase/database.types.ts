@@ -518,6 +518,75 @@ export interface Database {
         };
         Relationships: [];
       };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: MemberRole;
+          token_hash: string;
+          status: "pending" | "accepted" | "revoked" | "expired";
+          invited_by: string;
+          expires_at: string;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          revoked_at: string | null;
+          last_sent_at: string;
+          send_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          role: MemberRole;
+          token_hash: string;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          invited_by: string;
+          expires_at?: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_at?: string | null;
+          last_sent_at?: string;
+          send_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email?: string;
+          role?: MemberRole;
+          token_hash?: string;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          invited_by?: string;
+          expires_at?: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          revoked_at?: string | null;
+          last_sent_at?: string;
+          send_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_invitations_invited_by_fkey";
+            columns: ["invited_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -561,6 +630,47 @@ export interface Database {
           p_decision: string;
           p_actor_name: string;
           p_audit_meta?: Json;
+        };
+        Returns: Json;
+      };
+      create_invitation: {
+        Args: {
+          p_workspace_id: string;
+          p_email: string;
+          p_role: string;
+          p_token_hash: string;
+        };
+        Returns: string;
+      };
+      resend_invitation: {
+        Args: {
+          p_invitation_id: string;
+          p_new_token_hash: string;
+        };
+        Returns: void;
+      };
+      revoke_invitation: {
+        Args: {
+          p_invitation_id: string;
+        };
+        Returns: void;
+      };
+      get_invitation_by_token: {
+        Args: {
+          p_token_hash: string;
+        };
+        Returns: {
+          workspace_name: string;
+          role: MemberRole;
+          invited_email_masked: string;
+          inviter_name: string;
+          status: string;
+          expires_at: string;
+        }[];
+      };
+      accept_invitation: {
+        Args: {
+          p_token_hash: string;
         };
         Returns: Json;
       };
