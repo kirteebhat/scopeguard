@@ -22,6 +22,8 @@ import {
   Plus,
 } from "lucide-react";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
 interface ProjectsClientListProps {
   initialProjects: ProjectListItem[];
   canCreate: boolean;
@@ -30,9 +32,48 @@ interface ProjectsClientListProps {
 type SortOption = "newest" | "deadline_asc" | "deadline_desc" | "name_asc" | "budget_desc";
 
 export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClientListProps) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<string>(
+    () => searchParams.get("status") || "all"
+  );
+  const [sortBy, setSortBy] = useState<SortOption>(
+    () => (searchParams.get("sort") as SortOption) || "newest"
+  );
+
+  const updateUrlParams = (newSearch: string, newStatus: string, newSort: string) => {
+    const params = new URLSearchParams();
+    if (newSearch.trim()) params.set("search", newSearch.trim());
+    if (newStatus && newStatus !== "all") params.set("status", newStatus);
+    if (newSort && newSort !== "newest") params.set("sort", newSort);
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    updateUrlParams(value, statusFilter, sortBy);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    updateUrlParams(search, value, sortBy);
+  };
+
+  const handleSortChange = (value: SortOption) => {
+    setSortBy(value);
+    updateUrlParams(search, statusFilter, value);
+  };
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setSortBy("newest");
+    router.replace(pathname, { scroll: false });
+  };
 
   const filteredProjects = useMemo(() => {
     return initialProjects
@@ -114,7 +155,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             type="text"
             placeholder="Search projects or clients..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9 text-xs"
             id="projectSearchInput"
             aria-label="Search projects or clients"
@@ -126,7 +167,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusChange(e.target.value)}
               className="h-9 text-xs py-1"
               id="projectStatusFilter"
               aria-label="Filter projects by status"
@@ -143,7 +184,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <Select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              onChange={(e) => handleSortChange(e.target.value as SortOption)}
               className="h-9 text-xs py-1"
               id="projectSortBy"
               aria-label="Sort projects"
@@ -169,10 +210,7 @@ export function ProjectsClientList({ initialProjects, canCreate }: ProjectsClien
               action={
                 <Button
                   variant="secondary"
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                  }}
+                  onClick={handleClearFilters}
                 >
                   Clear Filters
                 </Button>

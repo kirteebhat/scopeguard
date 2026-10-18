@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { getWorkspaceProjects } from "@/lib/data/projects";
@@ -34,7 +34,9 @@ export default async function ProjectsPage() {
         }
       />
 
-      <ProjectsClientList initialProjects={projects} canCreate={canCreate} />
+      <Suspense fallback={<div className="h-40 bg-slate-100 rounded-xl animate-pulse" />}>
+        <ProjectsClientList initialProjects={projects} canCreate={canCreate} />
+      </Suspense>
     </div>
   );
 }

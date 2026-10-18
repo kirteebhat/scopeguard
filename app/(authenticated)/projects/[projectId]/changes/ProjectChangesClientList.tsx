@@ -23,6 +23,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
 interface ProjectChangesClientListProps {
   project: ProjectDetail;
   initialChanges: ChangeRequestItem[];
@@ -34,8 +36,38 @@ export function ProjectChangesClientList({
   initialChanges,
   canCreate,
 }: ProjectChangesClientListProps) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
+  const [statusFilter, setStatusFilter] = useState<string>(
+    () => searchParams.get("status") || "all"
+  );
+
+  const updateUrlParams = (newSearch: string, newStatus: string) => {
+    const params = new URLSearchParams();
+    if (newSearch.trim()) params.set("search", newSearch.trim());
+    if (newStatus && newStatus !== "all") params.set("status", newStatus);
+    const query = params.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    updateUrlParams(value, statusFilter);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    updateUrlParams(search, value);
+  };
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    router.replace(pathname, { scroll: false });
+  };
 
   // Summary Metrics
   const metrics = useMemo(() => {
@@ -163,7 +195,7 @@ export function ProjectChangesClientList({
             type="text"
             placeholder="Search proposals by title, deliverable, or scope description..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 h-9 text-xs"
             id="changeSearchInput"
             aria-label="Search proposals by title or deliverable"
@@ -175,7 +207,7 @@ export function ProjectChangesClientList({
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusChange(e.target.value)}
               className="h-9 text-xs py-1"
               id="changeStatusFilter"
               aria-label="Filter proposals by status"
@@ -202,10 +234,7 @@ export function ProjectChangesClientList({
               action={
                 <Button
                   variant="secondary"
-                  onClick={() => {
-                    setSearch("");
-                    setStatusFilter("all");
-                  }}
+                  onClick={handleClearFilters}
                   id="resetChangeFilterButton"
                 >
                   Clear Filters
