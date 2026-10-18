@@ -9,6 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        surface: {
+          canvas: "#f8fafc",
+          card: "#ffffff",
+          subtle: "#f1f5f9",
+          inset: "#f8fafc",
+          border: "#e2e8f0",
+        },
         brand: {
           50: "#eef2ff",
           100: "#e0e7ff",
@@ -29,7 +36,7 @@ const config: Config = {
         status: {
           draft: {
             bg: "#f1f5f9",
-            text: "#475569",
+            text: "#334155",
             border: "#cbd5e1",
           },
           pending: {
@@ -53,6 +60,11 @@ const config: Config = {
             border: "#e2e8f0",
           },
         },
+      },
+      boxShadow: {
+        subtle: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        card: "0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)",
+        lift: "0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04)",
       },
       fontFamily: {
         sans: [

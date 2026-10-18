@@ -120,7 +120,22 @@ export function ChangeRequestStatusStepper({
               className="relative flex items-center md:flex-col md:items-start"
               aria-current={step.state === "current" ? "step" : undefined}
             >
-              <div className="flex items-center w-full">
+              {/* Vertical connector line for mobile */}
+              {!isLast && (
+                <div
+                  className="md:hidden absolute left-4 top-8 h-full w-0.5 -ml-px bg-slate-200 z-0"
+                  aria-hidden="true"
+                >
+                  <motion.div
+                    className="w-full bg-indigo-600 origin-top h-full"
+                    initial={shouldReduceMotion ? false : { scaleY: 0 }}
+                    animate={{ scaleY: isConnectorFilled ? 1 : 0 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center w-full relative z-10">
                 {/* Step Circle Indicator */}
                 <div className="relative shrink-0 flex items-center justify-center">
                   {step.state === "current" && !shouldReduceMotion && (

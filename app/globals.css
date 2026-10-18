@@ -6,6 +6,10 @@
   :root {
     --bg-surface: #ffffff;
     --bg-canvas: #f8fafc;
+    --surface-canvas: #f8fafc;
+    --surface-card: #ffffff;
+    --surface-subtle: #f1f5f9;
+    --surface-border: #e2e8f0;
     --text-primary: #0f172a;
     --text-muted: #475569;
     --border-subtle: #e2e8f0;
@@ -75,6 +79,16 @@
     );
     animation: shimmer 1.8s infinite;
     content: "";
+  }
+
+  /* Subtle gradient utility for B2B surfaces */
+  .bg-gradient-subtle {
+    background-image: linear-gradient(
+      135deg,
+      rgba(248, 250, 252, 0.9) 0%,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(238, 242, 255, 0.35) 100%
+    );
   }
 }
 

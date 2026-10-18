@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
   Shield,
@@ -44,6 +45,7 @@ export function Sidebar({
   className,
 }: SidebarProps) {
   const pathname = usePathname();
+  const shouldReduceMotion = useReducedMotion();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
@@ -116,22 +118,29 @@ export function Sidebar({
               aria-current={isActive ? "page" : undefined}
               title={isCollapsed ? item.label : undefined}
               className={cn(
-                "flex items-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                "relative flex items-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 active:scale-[0.98]",
                 isCollapsed
                   ? "justify-center p-2.5"
                   : "gap-3 px-3 py-2",
                 isActive
-                  ? "bg-indigo-50 text-indigo-700 font-semibold"
+                  ? "text-indigo-700 font-semibold"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
+              {isActive && (
+                <motion.div
+                  layoutId={shouldReduceMotion ? undefined : "sidebar-active-pill"}
+                  className="absolute inset-0 rounded-lg bg-indigo-50 border border-indigo-100/60"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
               <Icon
                 className={cn(
-                  "w-4 h-4 shrink-0 transition-colors",
+                  "relative z-10 w-4 h-4 shrink-0 transition-colors",
                   isActive ? "text-indigo-600" : "text-slate-400"
                 )}
               />
-              {!isCollapsed && <span className="truncate">{item.label}</span>}
+              {!isCollapsed && <span className="relative z-10 truncate">{item.label}</span>}
             </Link>
           );
         })}

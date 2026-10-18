@@ -12,7 +12,7 @@ export interface HeaderProps {
 
 export function Header({
   onOpenMobileNav,
-  workspaceName = "Acme Agency",
+  workspaceName: _workspaceName = "Acme Agency",
   pageTitle,
 }: HeaderProps) {
   return (
@@ -38,24 +38,28 @@ export function Header({
 
       {/* Desktop breadcrumb or title */}
       <div className="hidden lg:flex lg:items-center lg:gap-2">
-        <span className="text-xs font-medium text-slate-400">
-          {workspaceName}
-        </span>
+        <Link
+          href="/dashboard"
+          className="text-xs font-medium text-slate-500 hover:text-indigo-600 transition-colors"
+        >
+          Dashboard
+        </Link>
         {pageTitle && (
           <>
             <span className="text-slate-300">/</span>
-            <span className="text-xs font-semibold text-slate-700">
+            <span className="text-xs font-semibold text-slate-900">
               {pageTitle}
             </span>
           </>
         )}
       </div>
 
-      {/* Right area slot */}
+      {/* Right area slot - clean status indicator and quick actions */}
       <div className="flex items-center gap-3">
-        <span className="text-xs text-slate-500 hidden sm:inline">
-          Workspace: <strong className="text-slate-700 font-semibold">{workspaceName}</strong>
-        </span>
+        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[11px] font-medium">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>System Healthy</span>
+        </div>
       </div>
     </header>
   );

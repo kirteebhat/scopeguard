@@ -18,13 +18,22 @@ export function Table({ className, containerClassName, ...props }: TableProps) {
   );
 }
 
+export interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionElement> {
+  sticky?: boolean;
+}
+
 export function TableHeader({
   className,
+  sticky = false,
   ...props
-}: React.HTMLAttributes<HTMLTableSectionElement>) {
+}: TableHeaderProps) {
   return (
     <thead
-      className={cn("bg-slate-50/75 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500", className)}
+      className={cn(
+        "bg-slate-50/75 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-500",
+        sticky && "sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs shadow-2xs",
+        className
+      )}
       {...props}
     />
   );
@@ -44,7 +53,7 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-slate-50/60 focus-within:bg-slate-50/80",
+        "transition-colors hover:bg-indigo-50/30 focus-within:bg-indigo-50/40",
         className
       )}
       {...props}
@@ -52,22 +61,45 @@ export function TableRow({
   );
 }
 
+export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
+  numeric?: boolean;
+}
+
 export function TableHead({
   className,
+  numeric = false,
   ...props
-}: React.ThHTMLAttributes<HTMLTableCellElement>) {
+}: TableHeadProps) {
   return (
     <th
-      className={cn("px-4 py-3 text-xs font-semibold text-slate-600", className)}
+      className={cn(
+        "px-4 py-3 text-xs font-semibold text-slate-600",
+        numeric && "text-right tabular-nums",
+        className
+      )}
       {...props}
     />
   );
 }
 
+export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
+  numeric?: boolean;
+}
+
 export function TableCell({
   className,
+  numeric = false,
   ...props
-}: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3.5 align-middle text-slate-700", className)} {...props} />;
+}: TableCellProps) {
+  return (
+    <td
+      className={cn(
+        "px-4 py-3.5 align-middle text-slate-700",
+        numeric && "text-right tabular-nums",
+        className
+      )}
+      {...props}
+    />
+  );
 }
 

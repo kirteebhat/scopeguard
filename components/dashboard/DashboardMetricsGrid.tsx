@@ -63,16 +63,16 @@ export function DashboardMetricsGrid({ metrics }: DashboardMetricsGridProps) {
                 <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Active Projects
                 </CardTitle>
-                <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+                <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors shrink-0">
                   <FolderKanban className="w-4 h-4" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                     <CountUp value={metrics.activeProjectsCount} />
                   </span>
-                  <span className="text-xs text-slate-400 flex items-center gap-0.5 group-hover:text-indigo-600 transition-colors">
+                  <span className="text-xs text-slate-400 flex items-center gap-0.5 group-hover:text-indigo-600 transition-colors whitespace-nowrap shrink-0">
                     View <ArrowUpRight className="w-3 h-3" />
                   </span>
                 </div>
@@ -92,12 +92,12 @@ export function DashboardMetricsGrid({ metrics }: DashboardMetricsGridProps) {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Pending Approvals
               </CardTitle>
-              <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+              <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 shrink-0">
                 <Clock className="w-4 h-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 <CountUp value={metrics.pendingApprovalsCount} />
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -114,12 +114,12 @@ export function DashboardMetricsGrid({ metrics }: DashboardMetricsGridProps) {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Approved Changes
               </CardTitle>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
+              <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 <CountUp value={metrics.approvedChangesCount} />
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -136,12 +136,12 @@ export function DashboardMetricsGrid({ metrics }: DashboardMetricsGridProps) {
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Rejected Changes
               </CardTitle>
-              <div className="p-2 rounded-xl bg-rose-50 text-rose-600">
+              <div className="p-2.5 rounded-xl bg-rose-50 text-rose-600 shrink-0">
                 <XCircle className="w-4 h-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                 <CountUp value={metrics.rejectedChangesCount} />
               </div>
               <p className="text-xs text-slate-500 mt-1">

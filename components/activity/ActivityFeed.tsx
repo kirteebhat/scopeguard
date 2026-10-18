@@ -70,31 +70,30 @@ export function ActivityFeed({
                 {config.icon}
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
-                <div className="text-slate-700 leading-relaxed pr-2">
+              <div className="flex flex-col">
+                <div className="text-slate-700 leading-relaxed">
                   <span className="font-semibold text-slate-900 mr-1.5 inline-flex items-center gap-1">
                     {log.actorType === "client_link" ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 font-semibold">
-                        <Globe className="w-3 h-3 text-emerald-600" />
+                      <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 font-semibold text-[11px]">
+                        <Globe className="w-3 h-3 text-emerald-600 shrink-0" />
                         {actorDisplay}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-slate-900">
-                        <User className="w-3 h-3 text-slate-400" />
+                      <span className="inline-flex items-center gap-1 text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60 font-semibold text-[11px]">
+                        <User className="w-3 h-3 text-slate-500 shrink-0" />
                         {actorDisplay}
                       </span>
                     )}
                   </span>
-                  <span>{config.sentence}</span>
+                  <span className="text-slate-700">{config.sentence}</span>
                 </div>
 
-                {/* Relative + Absolute Timestamp */}
-                <div
-                  className="shrink-0 text-[11px] text-slate-400 font-normal cursor-help sm:text-right"
-                  title={absoluteTime}
-                >
+                {/* Timestamp on clean, roomier second line below */}
+                <div className="mt-1 text-[11px] text-slate-400 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-slate-300 shrink-0" />
                   <span>{relativeTime}</span>
-                  <span className="hidden sm:inline text-slate-300 ml-1">• {absoluteTime}</span>
+                  <span className="text-slate-300">•</span>
+                  <span title={absoluteTime}>{absoluteTime}</span>
                 </div>
               </div>
             </div>

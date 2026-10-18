@@ -74,8 +74,8 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
             Active workspace baselines and revised scope rollups
           </p>
         </div>
-        <Link href="/projects">
-          <Button variant="ghost" size="sm" className="text-xs text-indigo-600 hover:text-indigo-700">
+        <Link href="/projects" className="shrink-0">
+          <Button variant="ghost" size="sm" className="text-xs text-indigo-600 hover:text-indigo-700 whitespace-nowrap">
             View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </Button>
         </Link>
@@ -83,15 +83,15 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
 
       <CardContent className="p-0">
         {/* Desktop Table View (Hidden on Small Screens) */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto max-h-[480px]">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/75 text-slate-500 border-b border-slate-100 font-semibold">
+            <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-xs text-slate-500 border-b border-slate-200 font-semibold shadow-2xs">
               <tr>
                 <th className="py-3 px-4">Project & Client</th>
                 <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Revised Budget</th>
-                <th className="py-3 px-3">Revised Deadline</th>
-                <th className="py-3 px-3">Pending CRs</th>
+                <th className="py-3 px-3 text-right">Revised Budget</th>
+                <th className="py-3 px-3 text-right">Revised Deadline</th>
+                <th className="py-3 px-3 text-center">Pending CRs</th>
                 <th className="py-3 px-3">Updated</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
@@ -104,7 +104,7 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
                 return (
                   <tr
                     key={p.id}
-                    className="hover:bg-slate-50/50 transition-colors group"
+                    className="hover:bg-indigo-50/30 transition-colors group"
                   >
                     <td className="py-3.5 px-4 font-medium">
                       <Link
@@ -124,7 +124,7 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
                       </Badge>
                     </td>
 
-                    <td className="py-3.5 px-3">
+                    <td className="py-3.5 px-3 text-right tabular-nums">
                       <div className="font-semibold text-slate-900">
                         {formatMinorToCurrency(p.revisedBudgetMinor, p.currency)}
                       </div>
@@ -135,7 +135,7 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
                       )}
                     </td>
 
-                    <td className="py-3.5 px-3">
+                    <td className="py-3.5 px-3 text-right tabular-nums">
                       <div className="text-slate-800 font-medium">
                         {p.revisedDeadline}
                       </div>
@@ -146,7 +146,7 @@ export function DashboardRecentProjects({ projects }: DashboardRecentProjectsPro
                       )}
                     </td>
 
-                    <td className="py-3.5 px-3">
+                    <td className="py-3.5 px-3 text-center">
                       {p.pendingRequestsCount > 0 ? (
                         <Badge variant="pending" showIcon>
                           {p.pendingRequestsCount}
