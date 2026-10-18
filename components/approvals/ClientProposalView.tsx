@@ -22,6 +22,7 @@ import { submitClientDecisionAction } from "@/app/actions/approvals";
 import { Dialog, DialogFooter } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function AnimatedCheckmark({ shouldReduceMotion }: { shouldReduceMotion: boolean | null }) {
   return (
@@ -343,20 +344,20 @@ export function ClientProposalView({
     <StateShell agencyName={proposal.agencyName} projectName={proposal.projectName}>
       <div className="space-y-6">
         {/* Header Banner Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60">
                 Version {snapshot.version_number}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/60">
                 <Clock className="w-3.5 h-3.5" />
                 Awaiting Client Sign-off
               </span>
             </div>
 
             {proposal.expiresAt && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 Expires on {new Date(proposal.expiresAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -367,26 +368,26 @@ export function ClientProposalView({
           </div>
 
           <div className="mt-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
               {snapshot.title}
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-600 whitespace-pre-line leading-relaxed">
+            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed">
               {snapshot.description}
             </p>
           </div>
 
           {snapshot.reason && (
-            <div className="mt-4 rounded-xl bg-slate-50 border border-slate-200/80 p-3.5 text-xs sm:text-sm">
-              <span className="font-semibold text-slate-800">Context / Reason: </span>
-              <span className="text-slate-600">{snapshot.reason}</span>
+            <div className="mt-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3.5 text-xs sm:text-sm">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Context / Reason: </span>
+              <span className="text-slate-600 dark:text-slate-400">{snapshot.reason}</span>
             </div>
           )}
 
           {snapshot.affected_deliverable && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-              <Layers className="w-3.5 h-3.5 text-slate-400" />
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <Layers className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span>Affects Deliverable: </span>
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-slate-700 dark:text-slate-200">
                 {snapshot.affected_deliverable.title}
               </span>
             </div>
@@ -396,16 +397,16 @@ export function ClientProposalView({
         {/* Financial & Schedule Impact Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Card 1: Financial Impact */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <DollarSign className="w-4 h-4 text-indigo-600" />
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <DollarSign className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>Financial Impact</span>
               </div>
 
               <div className="mt-3">
-                <div className="text-xs text-slate-500 font-medium">Additional Estimated Cost</div>
-                <div className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Additional Estimated Cost</div>
+                <div className="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
                   {costFormatted}
                 </div>
               </div>
@@ -413,7 +414,7 @@ export function ClientProposalView({
               {snapshot.pricing_method === "hourly" &&
                 snapshot.estimated_hours &&
                 snapshot.hourly_rate_minor && (
-                  <div className="mt-2 text-xs text-slate-500 font-mono">
+                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
                     {snapshot.estimated_hours} hrs ×{" "}
                     {formatMinorToCurrency(
                       snapshot.hourly_rate_minor,
@@ -424,49 +425,49 @@ export function ClientProposalView({
                 )}
 
               {/* MANDATORY DISCLAIMER LABEL */}
-              <div className="mt-4 rounded-lg bg-amber-50/70 border border-amber-200/60 p-2.5 flex items-start gap-2">
-                <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs font-medium text-amber-900 leading-snug">
+              <div className="mt-4 rounded-lg bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 p-2.5 flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs font-medium text-amber-900 dark:text-amber-300 leading-snug">
                   Estimate, not a contract or legally binding quote
                 </p>
               </div>
             </div>
 
             {budgetFormatted && (
-              <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex justify-between">
                 <span>Original Project Budget:</span>
-                <span className="font-medium text-slate-700">{budgetFormatted}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{budgetFormatted}</span>
               </div>
             )}
           </div>
 
           {/* Card 2: Schedule Impact */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <Calendar className="w-4 h-4 text-indigo-600" />
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <span>Schedule Impact</span>
               </div>
 
               <div className="mt-4 space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500">Original Deadline</span>
-                  <span className="font-medium text-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400">Original Deadline</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
                     {snapshot.original_contract?.original_deadline || "Not specified"}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Proposed Deadline</span>
-                  <span className="font-bold text-slate-900">
+                  <span className="text-slate-500 dark:text-slate-400 font-medium">Proposed Deadline</span>
+                  <span className="font-bold text-slate-900 dark:text-white">
                     {snapshot.proposed_deadline || "No date change requested"}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               <span>Timelines take effect immediately upon client sign-off.</span>
             </div>
           </div>
@@ -474,23 +475,23 @@ export function ClientProposalView({
 
         {/* Terms & Notes Card */}
         {(snapshot.terms_notes || snapshot.termsNotes || snapshot.disclaimer) && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
               Terms & Conditions
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
               {snapshot.terms_notes || snapshot.termsNotes || snapshot.disclaimer}
             </p>
           </div>
         )}
 
         {/* Action Bar (Mobile-first, touch-friendly min 44px) */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-md">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-md">
           <div className="text-center sm:text-left mb-4">
-            <h2 className="text-base font-semibold text-slate-900">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">
               Client Sign-off Decision
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Please review the estimated scope, cost, and deadline adjustments above
               before recording your decision.
             </p>
@@ -519,9 +520,9 @@ export function ClientProposalView({
                 setNameError("");
                 setIsRejectOpen(true);
               }}
-              className="inline-flex items-center justify-center gap-2 min-h-[46px] px-5 py-3 rounded-xl border border-slate-300 bg-white text-slate-700 font-medium text-sm hover:bg-slate-50 hover:text-slate-900 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center gap-2 min-h-[46px] px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-750 hover:text-slate-900 dark:hover:text-white active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
             >
-              <XCircle className="w-4 h-4 text-slate-500" />
+              <XCircle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
               <span>Decline / Reject</span>
             </button>
           </div>
@@ -739,38 +740,41 @@ function StateShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50/70 text-slate-900 antialiased py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased py-6 px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="mx-auto max-w-2xl">
         {/* Portal Header */}
-        <header className="mb-6 flex items-center justify-between border-b border-slate-200/80 pb-4">
+        <header className="mb-6 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Client Approval Portal
               </div>
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">
                 ScopeGuard
               </div>
             </div>
           </div>
 
-          {agencyName && (
-            <div className="text-right">
-              <div className="text-xs text-slate-400">Presented by</div>
-              <div className="text-xs font-semibold text-slate-800 flex items-center justify-end gap-1">
-                <Building2 className="w-3 h-3 text-slate-400" />
-                <span>{agencyName}</span>
+          <div className="flex items-center gap-3">
+            {agencyName && (
+              <div className="text-right hidden sm:block">
+                <div className="text-xs text-slate-400 dark:text-slate-500">Presented by</div>
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1">
+                  <Building2 className="w-3 h-3 text-slate-400" />
+                  <span>{agencyName}</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+            <ThemeToggle />
+          </div>
         </header>
 
         {projectName && (
-          <div className="mb-4 text-xs font-medium text-slate-500">
-            Project: <span className="font-semibold text-slate-700">{projectName}</span>
+          <div className="mb-4 text-xs font-medium text-slate-500 dark:text-slate-400">
+            Project: <span className="font-semibold text-slate-700 dark:text-slate-200">{projectName}</span>
           </div>
         )}
 
@@ -778,7 +782,7 @@ function StateShell({
         <main>{children}</main>
 
         {/* Minimal Footer */}
-        <footer className="mt-12 text-center text-xs text-slate-400 border-t border-slate-200/60 pt-6">
+        <footer className="mt-12 text-center text-xs text-slate-400 dark:text-slate-500 border-t border-slate-200/60 dark:border-slate-800 pt-6">
           <p>
             Secure Client Sign-off powered by ScopeGuard. All decisions are
             cryptographically logged with immutable timestamps.

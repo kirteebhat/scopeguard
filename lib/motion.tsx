@@ -121,7 +121,7 @@ export const MotionCard = React.forwardRef<HTMLDivElement, MotionCardProps>(
             : undefined
         }
         className={cn(
-          "rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-shadow",
+          "rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition-shadow dark:border-slate-800 dark:bg-slate-900",
           hoverLift && "hover:shadow-card",
           className
         )}
@@ -133,6 +133,26 @@ export const MotionCard = React.forwardRef<HTMLDivElement, MotionCardProps>(
   }
 );
 MotionCard.displayName = "MotionCard";
+
+export type MotionPageProps = HTMLMotionProps<"div">;
+
+export const MotionPage = React.forwardRef<HTMLDivElement, MotionPageProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <motion.div
+        ref={ref}
+        variants={fadeIn}
+        initial="hidden"
+        animate="show"
+        className={cn("w-full flex-1", className)}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+);
+MotionPage.displayName = "MotionPage";
 
 export interface MotionListProps extends HTMLMotionProps<"div"> {
   staggerDelay?: number;

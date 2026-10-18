@@ -19,6 +19,22 @@
     --focus-ring: #6366f1;
   }
 
+  .dark {
+    --bg-surface: #0f172a;
+    --bg-canvas: #020617;
+    --surface-canvas: #020617;
+    --surface-card: #0f172a;
+    --surface-subtle: #1e293b;
+    --surface-border: #334155;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-subtle: #1e293b;
+    --border-strong: #334155;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --focus-ring: #818cf8;
+  }
+
   body {
     color: var(--text-primary);
     background-color: var(--bg-canvas);

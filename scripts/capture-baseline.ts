@@ -127,23 +127,51 @@ async function main() {
   }
 
   // Create Version 1 snapshot
-  await admin.from("change_request_versions").insert({
-    change_request_id: changeRequest.id,
-    version_number: 1,
-    title: changeRequest.title,
-    description: changeRequest.description,
-    pricing_method: changeRequest.pricing_method,
-    cost_minor: changeRequest.cost_minor,
-    currency: "USD",
-    proposed_deadline: changeRequest.proposed_deadline,
-    snapshot: {
+  const { data: ver, error: verErr } = await admin
+    .from("change_request_versions")
+    .insert({
+      change_request_id: changeRequest.id,
+      version_number: 1,
       title: changeRequest.title,
       description: changeRequest.description,
+      pricing_method: changeRequest.pricing_method,
       cost_minor: changeRequest.cost_minor,
       currency: "USD",
       proposed_deadline: changeRequest.proposed_deadline,
-    },
-    published_by: userId,
+      snapshot: {
+        version_number: 1,
+        title: changeRequest.title,
+        description: changeRequest.description,
+        cost_minor: changeRequest.cost_minor,
+        currency: "USD",
+        proposed_deadline: changeRequest.proposed_deadline,
+        original_contract: {
+          project_name: project.name,
+          client_name: project.client_name,
+          budget_minor: project.budget_minor,
+          original_deadline: project.original_deadline,
+        },
+      },
+      published_by: userId,
+    })
+    .select()
+    .single();
+
+  if (verErr || !ver) {
+    throw new Error(`Failed to create version: ${verErr?.message}`);
+  }
+
+  // Generate Approval Token
+  const crypto = await import("crypto");
+  const rawToken = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+  await admin.from("approval_tokens").insert({
+    version_id: ver.id,
+    token_hash: tokenHash,
+    expires_at: expiresAt,
+    created_by: userId,
   });
 
   console.log("Launching browser to capture baseline screenshots...");
@@ -155,6 +183,7 @@ async function main() {
     { name: "project-detail", path: `/projects/${project.id}` },
     { name: "change-request", path: `/changes/${changeRequest.id}` },
     { name: "settings", path: "/settings" },
+    { name: "approve", path: `/approve/${rawToken}` },
   ];
 
   // 1. Desktop Viewport (1440x900)
