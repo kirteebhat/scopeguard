@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,7 +7,7 @@ import { getProjectChangeRequests } from "@/lib/data/change-requests";
 import { getWorkspaceContextOrRedirect } from "@/lib/data/auth-context";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Plus, ArrowLeft, Settings } from "lucide-react";
+import { Plus, ArrowLeft, Settings, Download } from "lucide-react";
 import { ProjectChangesClientList } from "./ProjectChangesClientList";
 
 interface ProjectChangesPageProps {
@@ -59,6 +59,16 @@ export default async function ProjectChangesPage({ params }: ProjectChangesPageP
         description={`Commercial scope modifications, additional billing proposals, and deadline extensions for ${project.clientName}.`}
         actions={
           <div className="flex items-center gap-2">
+            <a
+              href={`/api/projects/${project.id}/export-csv`}
+              download
+              className="inline-flex"
+              id="exportCsvButton"
+            >
+              <Button variant="secondary" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                Export CSV
+              </Button>
+            </a>
             <Link href={`/projects/${project.id}/settings`}>
               <Button variant="ghost" size="sm" leftIcon={<Settings className="w-4 h-4" />}>
                 Project Settings
@@ -73,11 +83,13 @@ export default async function ProjectChangesPage({ params }: ProjectChangesPageP
         }
       />
 
-      <ProjectChangesClientList
-        project={project}
-        initialChanges={changeRequests}
-        canCreate={canCreate}
-      />
+      <Suspense fallback={<div className="h-40 bg-slate-100 rounded-xl animate-pulse" />}>
+        <ProjectChangesClientList
+          project={project}
+          initialChanges={changeRequests}
+          canCreate={canCreate}
+        />
+      </Suspense>
     </div>
   );
 }
