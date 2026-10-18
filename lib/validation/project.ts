@@ -36,6 +36,20 @@ export const createProjectSchema = z
       .trim()
       .min(2, "Client name must be at least 2 characters")
       .max(100, "Client name cannot exceed 100 characters"),
+    clientContactName: z
+      .string()
+      .trim()
+      .max(100, "Client contact name cannot exceed 100 characters")
+      .optional()
+      .nullable(),
+    clientContactEmail: z
+      .string()
+      .trim()
+      .email("Invalid client contact email address")
+      .max(255, "Client contact email cannot exceed 255 characters")
+      .optional()
+      .nullable()
+      .or(z.literal("")),
     description: z
       .string()
       .trim()
@@ -80,6 +94,20 @@ export const updateProjectSchema = z
       .min(2, "Client name must be at least 2 characters")
       .max(100, "Client name cannot exceed 100 characters")
       .optional(),
+    clientContactName: z
+      .string()
+      .trim()
+      .max(100, "Client contact name cannot exceed 100 characters")
+      .optional()
+      .nullable(),
+    clientContactEmail: z
+      .string()
+      .trim()
+      .email("Invalid client contact email address")
+      .max(255, "Client contact email cannot exceed 255 characters")
+      .optional()
+      .nullable()
+      .or(z.literal("")),
     description: z
       .string()
       .trim()

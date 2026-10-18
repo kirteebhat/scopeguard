@@ -21,6 +21,8 @@ export interface ProjectListItem {
   workspaceId: string;
   name: string;
   clientName: string;
+  clientContactName?: string | null;
+  clientContactEmail?: string | null;
   status: ProjectStatus;
   currency: string;
   budgetMinor: number;
@@ -47,6 +49,8 @@ export interface ProjectDetail extends ProjectListItem {
 export interface CreateProjectData {
   name: string;
   clientName: string;
+  clientContactName?: string | null;
+  clientContactEmail?: string | null;
   description?: string | null;
   currency: string;
   budgetMinor: number;
@@ -59,6 +63,8 @@ export interface CreateProjectData {
 export interface UpdateProjectData {
   name?: string;
   clientName?: string;
+  clientContactName?: string | null;
+  clientContactEmail?: string | null;
   description?: string | null;
   currency?: string;
   budgetMinor?: number;
@@ -73,6 +79,8 @@ interface ProjectDbRow {
   workspace_id: string;
   name: string;
   client_name: string;
+  client_contact_name?: string | null;
+  client_contact_email?: string | null;
   status: ProjectStatus;
   currency: string;
   budget_minor: number;
@@ -230,6 +238,8 @@ export async function getWorkspaceProjects(): Promise<ProjectListItem[]> {
       workspaceId: p.workspace_id,
       name: p.name,
       clientName: p.client_name,
+      clientContactName: p.client_contact_name ?? null,
+      clientContactEmail: p.client_contact_email ?? null,
       status: p.status,
       currency: p.currency,
       budgetMinor: p.budget_minor,
@@ -382,6 +392,8 @@ export async function getProjectById(projectId: string): Promise<ProjectDetail> 
     workspaceId: project.workspace_id,
     name: project.name,
     clientName: project.client_name,
+    clientContactName: project.client_contact_name ?? null,
+    clientContactEmail: project.client_contact_email ?? null,
     status: project.status,
     currency: project.currency,
     budgetMinor: project.budget_minor,
@@ -419,6 +431,8 @@ export async function createProject(
       workspace_id: context.workspace.id,
       name: data.name.trim(),
       client_name: data.clientName.trim(),
+      client_contact_name: data.clientContactName?.trim() || null,
+      client_contact_email: data.clientContactEmail?.trim().toLowerCase() || null,
       currency: data.currency.toUpperCase().trim(),
       budget_minor: data.budgetMinor,
       hourly_rate_minor: data.hourlyRateMinor,
@@ -523,6 +537,12 @@ export async function updateProject(
 
   if (data.name !== undefined) updatePayload.name = data.name.trim();
   if (data.clientName !== undefined) updatePayload.client_name = data.clientName.trim();
+  if (data.clientContactName !== undefined) {
+    updatePayload.client_contact_name = data.clientContactName?.trim() || null;
+  }
+  if (data.clientContactEmail !== undefined) {
+    updatePayload.client_contact_email = data.clientContactEmail?.trim().toLowerCase() || null;
+  }
   if (data.status !== undefined) updatePayload.status = data.status;
   if (data.startDate !== undefined) updatePayload.start_date = data.startDate;
   if (data.originalDeadline !== undefined) updatePayload.original_deadline = data.originalDeadline;
@@ -563,4 +583,33 @@ export async function updateProject(
   });
 
   return updated;
+}
+
+/**
+ * Updates primary client contact details (name and email) for a project.
+ * Restrict: owners and managers only.
+ * Logs a specialized 'client_contact_updated' activity log with masked email.
+ */
+export async function setProjectClientContact(
+  projectId: string,
+  name?: string | null,
+  email?: string | null,
+  customContext?: AuthContext
+): Promise<void> {
+  await requireRole(["owner", "manager"], customContext);
+  const adminClient = createServiceRoleClient();
+
+  const trimmedName = name?.trim() || null;
+  const trimmedEmail = email?.trim().toLowerCase() || null;
+
+  // Call the SECURITY DEFINER RPC function which updates the project and creates the audit log
+  const { error } = await adminClient.rpc("set_project_client_contact", {
+    p_project_id: projectId,
+    p_name: trimmedName,
+    p_email: trimmedEmail,
+  });
+
+  if (error) {
+    throw new Error(error.message || "Failed to update project client contact");
+  }
 }

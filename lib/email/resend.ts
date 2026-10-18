@@ -13,6 +13,19 @@ function getResendClient(apiKey?: string): Resend | null {
 }
 
 export class ResendEmailProvider implements EmailProvider {
+  isConfigured(): boolean {
+    try {
+      const { RESEND_API_KEY } = getServerEnv();
+      return !!(
+        RESEND_API_KEY &&
+        RESEND_API_KEY.trim() !== "" &&
+        !RESEND_API_KEY.startsWith("re_your_resend_api_key")
+      );
+    } catch {
+      return false;
+    }
+  }
+
   async sendEmail(payload: SendEmailPayload): Promise<SendEmailResult> {
     try {
       const { RESEND_API_KEY, EMAIL_FROM } = getServerEnv();
@@ -37,9 +50,20 @@ export class ResendEmailProvider implements EmailProvider {
         };
       }
 
+      const defaultFrom = EMAIL_FROM || "ScopeGuard <notifications@scopeguard.agency>";
+      let fromAddress = defaultFrom;
+      if (payload.fromName) {
+        const emailMatch = defaultFrom.match(/<([^>]+)>/);
+        const bareEmail = emailMatch ? emailMatch[1] : defaultFrom;
+        // Escape any quotes in fromName
+        const cleanName = payload.fromName.replace(/["\r\n]/g, "");
+        fromAddress = `"${cleanName}" <${bareEmail}>`;
+      }
+
       const { data, error } = await client.emails.send({
-        from: EMAIL_FROM || "ScopeGuard <notifications@scopeguard.agency>",
+        from: fromAddress,
         to: payload.to,
+        replyTo: payload.replyTo,
         subject: payload.subject,
         html: payload.html,
         text: payload.text,

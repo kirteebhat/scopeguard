@@ -68,3 +68,15 @@ export function hashApprovalToken(rawToken: string): string {
   return crypto.createHash("sha256").update(rawToken.trim()).digest("hex");
 }
 
+/**
+ * Constructs the absolute URL for the client approval portal.
+ *
+ * @param rawToken The raw cryptographic token
+ * @param baseUrl Optional base URL override; defaults to NEXT_PUBLIC_APP_URL or http://localhost:3001
+ */
+export function buildApprovalUrl(rawToken: string, baseUrl?: string): string {
+  const origin = (baseUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001").replace(/\/+$/, "");
+  return `${origin}/approve/${rawToken}`;
+}
+
+

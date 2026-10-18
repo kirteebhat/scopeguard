@@ -3,6 +3,8 @@ export interface SendEmailPayload {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
+  fromName?: string;
 }
 
 export type EmailDeliveryStatus = "sent" | "not_configured" | "failed";
@@ -15,5 +17,6 @@ export interface SendEmailResult {
 }
 
 export interface EmailProvider {
+  isConfigured?(): boolean;
   sendEmail(payload: SendEmailPayload): Promise<SendEmailResult>;
 }
