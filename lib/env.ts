@@ -26,6 +26,7 @@ const serverEnvSchema = z.object({
     .string()
     .min(1, "SUPABASE_SERVICE_ROLE_KEY is required on the server"),
   RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional().default("ScopeGuard <notifications@scopeguard.agency>"),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -77,6 +78,7 @@ export function getServerEnv(): ServerEnv {
   const rawServer = {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    EMAIL_FROM: process.env.EMAIL_FROM || "ScopeGuard <notifications@scopeguard.agency>",
   };
 
   const parsed = serverEnvSchema.safeParse(rawServer);
