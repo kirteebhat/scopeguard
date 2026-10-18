@@ -124,6 +124,8 @@ export interface Database {
           workspace_id: string;
           name: string;
           client_name: string;
+          client_contact_name: string | null;
+          client_contact_email: string | null;
           status: ProjectStatus;
           currency: string;
           budget_minor: number;
@@ -139,6 +141,8 @@ export interface Database {
           workspace_id: string;
           name: string;
           client_name: string;
+          client_contact_name?: string | null;
+          client_contact_email?: string | null;
           status?: ProjectStatus;
           currency: string;
           budget_minor?: number;
@@ -154,6 +158,8 @@ export interface Database {
           workspace_id?: string;
           name?: string;
           client_name?: string;
+          client_contact_name?: string | null;
+          client_contact_email?: string | null;
           status?: ProjectStatus;
           currency?: string;
           budget_minor?: number;
@@ -587,6 +593,89 @@ export interface Database {
           }
         ];
       };
+      proposal_emails: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          change_request_id: string;
+          version_id: string;
+          recipient_email: string;
+          recipient_name: string | null;
+          status: "queued" | "sent" | "failed";
+          provider: string;
+          provider_message_id: string | null;
+          error_code: string | null;
+          sent_by: string | null;
+          personal_note_present: boolean;
+          send_attempt_key: string;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          change_request_id: string;
+          version_id: string;
+          recipient_email: string;
+          recipient_name?: string | null;
+          status?: "queued" | "sent" | "failed";
+          provider?: string;
+          provider_message_id?: string | null;
+          error_code?: string | null;
+          sent_by?: string | null;
+          personal_note_present?: boolean;
+          send_attempt_key: string;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          change_request_id?: string;
+          version_id?: string;
+          recipient_email?: string;
+          recipient_name?: string | null;
+          status?: "queued" | "sent" | "failed";
+          provider?: string;
+          provider_message_id?: string | null;
+          error_code?: string | null;
+          sent_by?: string | null;
+          personal_note_present?: boolean;
+          send_attempt_key?: string;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "proposal_emails_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "proposal_emails_change_request_id_fkey";
+            columns: ["change_request_id"];
+            isOneToOne: false;
+            referencedRelation: "change_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "proposal_emails_version_id_fkey";
+            columns: ["version_id"];
+            isOneToOne: false;
+            referencedRelation: "change_request_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "proposal_emails_sent_by_fkey";
+            columns: ["sent_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -673,6 +762,33 @@ export interface Database {
           p_token_hash: string;
         };
         Returns: Json;
+      };
+      begin_proposal_email: {
+        Args: {
+          p_change_request_id: string;
+          p_recipient_email: string;
+          p_recipient_name?: string | null;
+          p_attempt_key: string;
+          p_personal_note_present?: boolean;
+        };
+        Returns: string;
+      };
+      complete_proposal_email: {
+        Args: {
+          p_email_id: string;
+          p_status: string;
+          p_provider_message_id?: string | null;
+          p_error_code?: string | null;
+        };
+        Returns: void;
+      };
+      set_project_client_contact: {
+        Args: {
+          p_project_id: string;
+          p_contact_name?: string | null;
+          p_contact_email?: string | null;
+        };
+        Returns: void;
       };
     };
     Enums: {
