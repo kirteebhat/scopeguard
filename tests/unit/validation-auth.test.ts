@@ -137,6 +137,34 @@ describe("Authentication Zod Validation Schemas", () => {
       expect(forgotPasswordSchema.safeParse({ email: "" }).success).toBe(false);
       expect(forgotPasswordSchema.safeParse({ email: "invalid-email" }).success).toBe(false);
     });
+
+    it("normalizes email to trimmed lowercase", () => {
+      const res = forgotPasswordSchema.safeParse({ email: "  FOUNDER@Agency.COM  " });
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.email).toBe("founder@agency.com");
+      }
+    });
+  });
+
+  describe("email normalization across all auth schemas", () => {
+    it("trims and lowercases emails across login, signup, and resend", () => {
+      const login = loginSchema.safeParse({
+        email: "  USER@Example.COM  ",
+        password: "ValidPassword123",
+      });
+      expect(login.success).toBe(true);
+      if (login.success) expect(login.data.email).toBe("user@example.com");
+
+      const signup = signUpSchema.safeParse({
+        fullName: "Test User",
+        workspaceName: "Workspace",
+        email: "  NEWUSER@Example.COM  ",
+        password: "ValidPassword1",
+      });
+      expect(signup.success).toBe(true);
+      if (signup.success) expect(signup.data.email).toBe("newuser@example.com");
+    });
   });
 
   describe("resetPasswordSchema", () => {

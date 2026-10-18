@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useActionState } from "react";
+import React, { useActionState, useState } from "react";
 import Link from "next/link";
-import { signUpAction } from "@/app/actions/auth";
+import { signUpAction, resendVerificationAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FormField } from "@/components/ui/FormField";
@@ -14,13 +14,50 @@ import {
   AlertCircle,
   MailCheck,
   ExternalLink,
+  ArrowRight,
+  RefreshCw,
+  KeyRound,
 } from "lucide-react";
 
 export function SignUpForm() {
   const [state, formAction, isPending] = useActionState(signUpAction, null);
+  const [resendState, setResendState] = useState<{
+    loading: boolean;
+    message?: string;
+    isError?: boolean;
+  }>({ loading: false });
+
+  const handleResend = async (email: string) => {
+    setResendState({ loading: true });
+    const formData = new FormData();
+    formData.append("email", email);
+    try {
+      const res = await resendVerificationAction(null, formData);
+      if (res.success) {
+        setResendState({
+          loading: false,
+          message: "A fresh verification link has been sent to your email.",
+          isError: false,
+        });
+      } else {
+        setResendState({
+          loading: false,
+          message: res.message || "Failed to resend verification email.",
+          isError: true,
+        });
+      }
+    } catch {
+      setResendState({
+        loading: false,
+        message: "An unexpected error occurred while resending.",
+        isError: true,
+      });
+    }
+  };
 
   // If email verification is required, display confirmation guide
-  if (state?.data?.confirmationRequired) {
+  if (state?.data?.confirmationRequired && state.data.email) {
+    const email = state.data.email;
     return (
       <div className="text-center space-y-5 animate-in fade-in-50">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100">
@@ -33,11 +70,37 @@ export function SignUpForm() {
           </h1>
           <p className="mt-1.5 text-xs text-slate-600">
             We sent a verification link to{" "}
-            <span className="font-semibold text-slate-900">
-              {state.data.email}
-            </span>
-            . Please click the link to confirm your account.
+            <span className="font-semibold text-slate-900">{email}</span>. Please click the link to confirm your account.
           </p>
+        </div>
+
+        {/* Resend notification status */}
+        {resendState.message && (
+          <div
+            role="status"
+            className={`p-3 rounded-xl text-xs ${
+              resendState.isError
+                ? "bg-rose-50 text-rose-800 border border-rose-200"
+                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+            }`}
+          >
+            {resendState.message}
+          </div>
+        )}
+
+        {/* Resend Action */}
+        <div className="pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleResend(email)}
+            isLoading={resendState.loading}
+            disabled={resendState.loading}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+          >
+            Resend verification email
+          </Button>
         </div>
 
         {/* Local Development Guidance Box */}
@@ -46,8 +109,7 @@ export function SignUpForm() {
             <span>Local Development Instructions</span>
           </div>
           <p className="leading-relaxed">
-            In local development with Supabase, emails are captured locally. You
-            can view the confirmation message in:
+            In local development with Supabase, emails are captured locally. You can view the confirmation message in:
           </p>
           <ul className="list-disc pl-4 space-y-1 text-slate-600">
             <li>
@@ -95,8 +157,54 @@ export function SignUpForm() {
         </p>
       </div>
 
-      {/* Error Alert Banner */}
-      {state?.message && (
+      {/* Helpful Existing Confirmed Account Notice with Action Links */}
+      {state?.data?.existingAccount ? (
+        <div
+          role="alert"
+          className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs space-y-3 animate-in fade-in-50"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-indigo-950">
+                An account with this email already exists
+              </p>
+              <p className="text-indigo-700 mt-0.5">
+                {state.data.email ? (
+                  <span>
+                    <strong>{state.data.email}</strong> is already registered.
+                  </span>
+                ) : (
+                  "This email is already registered."
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Link href="/login" className="flex-1">
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full text-xs font-semibold"
+                leftIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              >
+                Sign In to Account
+              </Button>
+            </Link>
+            <Link href="/forgot-password" className="flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs font-semibold border-indigo-200 text-indigo-800 hover:bg-indigo-100/60"
+                leftIcon={<KeyRound className="w-3.5 h-3.5" />}
+              >
+                Reset Password
+              </Button>
+            </Link>
+          </div>
+        </div>
+      ) : state?.message ? (
         <div
           role="alert"
           className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5 animate-in fade-in-50"
@@ -104,7 +212,7 @@ export function SignUpForm() {
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <span className="leading-relaxed">{state.message}</span>
         </div>
-      )}
+      ) : null}
 
       {/* Full Name Field */}
       <FormField

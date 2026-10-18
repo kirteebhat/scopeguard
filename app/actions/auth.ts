@@ -8,8 +8,10 @@ import {
   loginSchema,
   signUpSchema,
   forgotPasswordSchema,
+  resendVerificationSchema,
   resetPasswordSchema,
 } from "@/lib/validation/auth";
+import { classifySignUpResult } from "@/lib/domain/authClassification";
 import { getSafeRedirectUrl } from "@/lib/validation/redirect";
 
 export interface ActionState<T = unknown> {
@@ -88,14 +90,26 @@ export async function loginAction(
   return { success: true };
 }
 
+export interface SignUpResultData {
+  confirmationRequired?: boolean;
+  email?: string;
+  resent?: boolean;
+  existingAccount?: boolean;
+}
+
 /**
  * Register a new user and create their initial workspace.
- * In development, gracefully handles mailer rate limits.
+ * Correctly distinguishes:
+ * (a) Brand new account awaiting confirmation
+ * (b) Existing unconfirmed account (resends verification link)
+ * (c) Existing confirmed account (shows helpful prompt with Log in and Reset Password links)
+ * (d) Rate-limited attempts
+ * (e) Network / server errors
  */
 export async function signUpAction(
-  _prevState: ActionState | null,
+  _prevState: ActionState<SignUpResultData> | null,
   formData: FormData
-): Promise<ActionState<{ confirmationRequired?: boolean; email?: string }>> {
+): Promise<ActionState<SignUpResultData>> {
   const rawData = {
     fullName: formData.get("fullName"),
     workspaceName: formData.get("workspaceName"),
@@ -116,6 +130,7 @@ export async function signUpAction(
 
   try {
     const supabase = await createClient();
+    const adminClient = createServiceRoleClient();
     const headerList = await headers();
     const host = headerList.get("host") || "localhost:3000";
     const protocol = host.includes("localhost") ? "http" : "https";
@@ -133,10 +148,9 @@ export async function signUpAction(
       },
     });
 
-    // Handle mail rate-limit gracefully when service-role client is available
+    // Handle development / test mailer rate limits gracefully
     if (error && error.message.toLowerCase().includes("rate limit")) {
       try {
-        const adminClient = createServiceRoleClient();
         const devUser = await adminClient.auth.admin.createUser({
           email,
           password,
@@ -148,10 +162,8 @@ export async function signUpAction(
         });
 
         if (devUser.data.user) {
-          // Immediately sign in with the new user session
           await supabase.auth.signInWithPassword({ email, password });
 
-          // Atomically provision workspace and assign owner role
           const baseSlug =
             workspaceName
               .toLowerCase()
@@ -183,48 +195,131 @@ export async function signUpAction(
           message: "Unable to create account. If you already have an account, please try logging in.",
         };
       }
-    } else if (error) {
-      // Generic error message to prevent enumeration
-      return {
-        success: false,
-        message: "Unable to create account. If you already have an account, please try logging in.",
-      };
-    } else if (data.session) {
-      // User confirmed automatically
-      const adminClient = createServiceRoleClient();
-      const baseSlug =
-        workspaceName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "") || "workspace";
-
-      const { data: createdWs } = await adminClient
-        .from("workspaces")
-        .insert({
-          name: workspaceName,
-          slug: `${baseSlug}-${Date.now()}`,
-          plan: "free",
-        })
-        .select()
-        .single();
-
-      if (createdWs) {
-        await adminClient.from("workspace_members").insert({
-          workspace_id: createdWs.id,
-          user_id: data.session.user.id,
-          role: "owner",
-        });
+    } else {
+      // Check if this email was an existing account
+      let accountConfirmed = false;
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        try {
+          const { data: userList } = await adminClient.auth.admin.listUsers();
+          const existing = userList?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+          if (existing?.email_confirmed_at) {
+            accountConfirmed = true;
+          }
+        } catch {
+          // If admin list fails, fallback to user object
+          if (data.user.email_confirmed_at) accountConfirmed = true;
+        }
       }
-      redirectTarget = "/dashboard";
-    } else if (data.user) {
-      // Confirmation email required
-      return {
-        success: true,
-        data: {
-          confirmationRequired: true,
-          email,
-        },
-      };
+
+      const classification = classifySignUpResult({
+        user: data?.user,
+        session: data?.session,
+        error,
+        accountConfirmed,
+      });
+
+      switch (classification) {
+        case "new_account_confirmed": {
+          // Auto-confirmed user (e.g., local Supabase with confirmation disabled)
+          const baseSlug =
+            workspaceName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-|-$/g, "") || "workspace";
+
+          // Ensure workspace is not duplicated if returning
+          const { data: existingMember } = await adminClient
+            .from("workspace_members")
+            .select("workspace_id")
+            .eq("user_id", data.session!.user.id)
+            .maybeSingle();
+
+          if (!existingMember) {
+            const { data: createdWs } = await adminClient
+              .from("workspaces")
+              .insert({
+                name: workspaceName,
+                slug: `${baseSlug}-${Date.now()}`,
+                plan: "free",
+              })
+              .select()
+              .single();
+
+            if (createdWs) {
+              await adminClient.from("workspace_members").insert({
+                workspace_id: createdWs.id,
+                user_id: data.session!.user.id,
+                role: "owner",
+              });
+            }
+          }
+          redirectTarget = "/dashboard";
+          break;
+        }
+
+        case "new_account_unconfirmed": {
+          // Brand new user awaiting verification
+          return {
+            success: true,
+            data: {
+              confirmationRequired: true,
+              email,
+            },
+          };
+        }
+
+        case "existing_account_unconfirmed": {
+          // Existing unconfirmed account: resend verification email per user instructions
+          try {
+            await supabase.auth.resend({
+              type: "signup",
+              email,
+              options: {
+                emailRedirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+              },
+            });
+          } catch {
+            // Ignore error if resend is throttled
+          }
+
+          return {
+            success: true,
+            data: {
+              confirmationRequired: true,
+              email,
+              resent: true,
+            },
+            message: "An unconfirmed account with this email already exists. A fresh verification email has been sent.",
+          };
+        }
+
+        case "existing_account_confirmed": {
+          // Existing confirmed account: show helpful message with Log in & Reset Password links
+          return {
+            success: false,
+            data: {
+              existingAccount: true,
+              email,
+            },
+            message: "An account with this email address already exists. Please log in or reset your password.",
+          };
+        }
+
+        case "rate_limited": {
+          return {
+            success: false,
+            message: "Too many sign-up attempts. Please wait a few moments before trying again.",
+          };
+        }
+
+        case "error":
+        default: {
+          return {
+            success: false,
+            message: error?.message || "Unable to complete registration. Please verify your details and try again.",
+          };
+        }
+      }
     }
   } catch {
     return {
@@ -238,6 +333,64 @@ export async function signUpAction(
   }
 
   return { success: true };
+}
+
+/**
+ * Resend email verification link for an unconfirmed account.
+ */
+export async function resendVerificationAction(
+  _prevState: ActionState<{ resent?: boolean; email?: string }> | null,
+  formData: FormData
+): Promise<ActionState<{ resent?: boolean; email?: string }>> {
+  const rawEmail = formData.get("email");
+  const validated = resendVerificationSchema.safeParse({ email: rawEmail });
+  if (!validated.success) {
+    return {
+      success: false,
+      fieldErrors: validated.error.flatten().fieldErrors,
+    };
+  }
+
+  const { email } = validated.data;
+  try {
+    const supabase = await createClient();
+    const headerList = await headers();
+    const host = headerList.get("host") || "localhost:3000";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    const appUrl = `${protocol}://${host}`;
+
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+      },
+    });
+
+    if (error) {
+      if (error.message.toLowerCase().includes("rate limit")) {
+        return {
+          success: false,
+          message: "Please wait a moment before requesting another verification email.",
+        };
+      }
+      return {
+        success: false,
+        message: "Unable to resend verification email. Please try again later.",
+      };
+    }
+
+    return {
+      success: true,
+      data: { resent: true, email },
+      message: "A verification email has been sent. Please check your inbox.",
+    };
+  } catch {
+    return {
+      success: false,
+      message: "An unexpected error occurred while resending. Please try again.",
+    };
+  }
 }
 
 /**
