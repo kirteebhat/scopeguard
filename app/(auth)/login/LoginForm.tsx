@@ -11,9 +11,10 @@ import { Mail, Lock, AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react
 interface LoginFormProps {
   next?: string;
   initialError?: string;
+  defaultEmail?: string;
 }
 
-export function LoginForm({ next, initialError }: LoginFormProps) {
+export function LoginForm({ next, initialError, defaultEmail }: LoginFormProps) {
   const [state, formAction, isPending] = useActionState(loginAction, null);
   const [resendState, resendAction, isResending] = useActionState(resendVerificationAction, null);
   const [showPassword, setShowPassword] = useState(false);
@@ -126,6 +127,7 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
           type="email"
           autoComplete="email"
           placeholder="founder@agency.com"
+          defaultValue={defaultEmail}
           required
           disabled={isPending}
           prefixElement={<Mail className="w-4 h-4 text-slate-600" />}

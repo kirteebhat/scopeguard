@@ -25,6 +25,7 @@ export interface WorkspaceInvitationItem {
 export interface PublicInvitationData {
   workspaceName: string;
   role: MemberRole;
+  email: string;
   invitedEmailMasked: string;
   inviterName: string;
   status: "pending" | "accepted" | "revoked" | "expired" | "invalid";
@@ -111,7 +112,7 @@ export async function listWorkspaceInvitations(): Promise<WorkspaceInvitationIte
 
 /**
  * Public-safe resolution of invitation details by raw token string.
- * Uses service-role client to invoke get_invitation_by_token RPC.
+ * Uses service-role client to query invitation and associated workspace/inviter.
  * Never leaks the stored token_hash.
  */
 export async function getInvitationByToken(rawToken: string): Promise<PublicInvitationData | null> {
@@ -122,21 +123,64 @@ export async function getInvitationByToken(rawToken: string): Promise<PublicInvi
   const tokenHash = hashInvitationToken(rawToken);
   const adminClient = createServiceRoleClient();
 
-  const { data, error } = await adminClient.rpc("get_invitation_by_token", {
-    p_token_hash: tokenHash,
-  });
+  interface RawRow {
+    id: string;
+    email: string;
+    role: MemberRole;
+    status: "pending" | "accepted" | "revoked" | "expired";
+    expires_at: string;
+    workspaces: { name: string } | { name: string }[] | null;
+    profiles: { full_name: string | null; email: string } | { full_name: string | null; email: string }[] | null;
+  }
 
-  if (error || !data || !Array.isArray(data) || data.length === 0) {
+  const { data, error } = await adminClient
+    .from("workspace_invitations")
+    .select(`
+      id,
+      email,
+      role,
+      status,
+      expires_at,
+      workspaces (
+        name
+      ),
+      profiles:invited_by (
+        full_name,
+        email
+      )
+    `)
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+
+  if (error || !data) {
     return null;
   }
 
-  const row = data[0];
+  const row = data as unknown as RawRow;
+  const ws = Array.isArray(row.workspaces) ? row.workspaces[0] : row.workspaces;
+  const prof = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+
+  let effectiveStatus = row.status;
+  if (effectiveStatus === "pending" && new Date(row.expires_at) < new Date()) {
+    effectiveStatus = "expired";
+  }
+
+  const email = row.email;
+  const atIdx = email.indexOf("@");
+  let invitedEmailMasked = email;
+  if (atIdx > 1) {
+    invitedEmailMasked = email[0] + "***" + email.slice(atIdx);
+  } else if (atIdx === 1) {
+    invitedEmailMasked = email[0] + "***" + email.slice(atIdx);
+  }
+
   return {
-    workspaceName: row.workspace_name,
-    role: row.role as MemberRole,
-    invitedEmailMasked: row.invited_email_masked,
-    inviterName: row.inviter_name,
-    status: row.status as PublicInvitationData["status"],
+    workspaceName: ws?.name || "Workspace",
+    role: row.role,
+    email: row.email,
+    invitedEmailMasked,
+    inviterName: prof?.full_name || prof?.email || "Team Administrator",
+    status: effectiveStatus,
     expiresAt: row.expires_at,
   };
 }

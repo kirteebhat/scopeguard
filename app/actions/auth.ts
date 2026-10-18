@@ -178,6 +178,7 @@ export async function signUpAction(
     workspaceName: formData.get("workspaceName"),
     email: formData.get("email"),
     password: formData.get("password"),
+    next: formData.get("next") || undefined,
   };
 
   const validated = signUpSchema.safeParse(rawData);
@@ -188,7 +189,8 @@ export async function signUpAction(
     };
   }
 
-  const { fullName, workspaceName, email, password } = validated.data;
+  const { fullName, workspaceName, email, password, next } = validated.data;
+  const safeNext = getSafeRedirectUrl(next, "/dashboard");
   let redirectTarget: string | null = null;
 
   try {
@@ -206,7 +208,7 @@ export async function signUpAction(
           full_name: fullName,
           default_workspace_name: workspaceName,
         },
-        emailRedirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(safeNext)}`,
       },
     });
 
@@ -249,7 +251,7 @@ export async function signUpAction(
               role: "owner",
             });
           }
-          redirectTarget = "/dashboard";
+          redirectTarget = safeNext;
         }
       } catch {
         return {
@@ -315,7 +317,7 @@ export async function signUpAction(
               });
             }
           }
-          redirectTarget = "/dashboard";
+          redirectTarget = safeNext;
           break;
         }
 
@@ -337,7 +339,7 @@ export async function signUpAction(
               type: "signup",
               email,
               options: {
-                emailRedirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+                emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(safeNext)}`,
               },
             });
           } catch {
@@ -554,11 +556,12 @@ export async function resetPasswordAction(
 }
 
 /**
- * Sign out current user and redirect to /login.
+ * Sign out current user and redirect to target or /login.
  */
-export async function logoutAction(): Promise<void> {
+export async function logoutAction(redirectTo: string = "/login"): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  const safeTarget = getSafeRedirectUrl(redirectTo, "/login");
+  redirect(safeTarget);
 }
 

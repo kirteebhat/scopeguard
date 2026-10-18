@@ -314,12 +314,17 @@ export interface AcceptActionState {
 
 /**
  * Server Action: Accepts a workspace invitation.
+ * Supports direct call with token string or useActionState/form submission.
  */
 export async function acceptInvitationAction(
-  _prevState: AcceptActionState | null,
-  formData: FormData
+  tokenOrPrevState: AcceptActionState | string | null,
+  maybeFormData?: FormData
 ): Promise<AcceptActionState> {
-  const token = formData.get("token") as string;
+  const token =
+    typeof tokenOrPrevState === "string"
+      ? tokenOrPrevState
+      : (maybeFormData?.get("token") as string);
+
   const validated = acceptInvitationSchema.safeParse({ token });
 
   if (!validated.success) {

@@ -81,7 +81,7 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (pathname.startsWith("/approve/")) {
+  if (pathname.startsWith("/approve/") || pathname.startsWith("/invite/")) {
     supabaseResponse.headers.set(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate"

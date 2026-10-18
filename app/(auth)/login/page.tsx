@@ -11,12 +11,13 @@ interface LoginPageProps {
   searchParams: Promise<{
     next?: string;
     error?: string;
+    email?: string;
   }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { next, error } = await searchParams;
+  const { next, error, email } = await searchParams;
 
-  return <LoginForm next={next} initialError={error} />;
+  return <LoginForm next={next} initialError={error} defaultEmail={email} />;
 }
 

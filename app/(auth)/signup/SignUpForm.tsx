@@ -20,7 +20,12 @@ import {
   KeyRound,
 } from "lucide-react";
 
-export function SignUpForm() {
+interface SignUpFormProps {
+  defaultEmail?: string;
+  next?: string;
+}
+
+export function SignUpForm({ defaultEmail, next }: SignUpFormProps = {}) {
   const shouldReduceMotion = useReducedMotion();
   const [state, formAction, isPending] = useActionState(signUpAction, null);
   const [resendState, setResendState] = useState<{
@@ -174,6 +179,8 @@ export function SignUpForm() {
             </p>
           </div>
 
+          {next && <input type="hidden" name="next" value={next} />}
+
       {/* Helpful Existing Confirmed Account Notice with Action Links */}
       {state?.data?.existingAccount ? (
         <div
@@ -283,6 +290,7 @@ export function SignUpForm() {
           type="email"
           autoComplete="email"
           placeholder="jane@apexstudio.com"
+          defaultValue={defaultEmail}
           required
           disabled={isPending}
           prefixElement={<Mail className="w-4 h-4 text-slate-600" />}
