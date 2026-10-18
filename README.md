@@ -23,10 +23,11 @@ ScopeGuard is a specialized B2B platform designed to prevent agency revenue leak
 | **Publishing, Revise & Withdraw** | **DONE** | Integration tests in `tests/integration/change-requests-workflow.test.ts` + Playwright E2E in `tests/e2e/change-requests-workflow.spec.ts`. |
 | **Public Mobile Client Approval Portal** | **DONE** | Playwright E2E in `tests/e2e/client-approval.spec.ts` (360px viewport, touch buttons, double-submit protection). |
 | **Workspace Team Invitations** | **DONE** | 13 integration tests in `tests/integration/invitations-migration.test.ts` + 19 unit tests in `tests/unit/invitations-validation.test.ts` (cryptographic tokens, role permissions, strict email match, Resend email dispatch, atomic acceptance, revoke/resend). |
+| **Send Proposal to Client** | **DONE** | 12 migration tests in `tests/integration/proposal-emails-migration.test.ts` + 15 unit tests in `tests/unit/proposal-email-validation.test.ts` + 10 integration tests in `tests/integration/proposal-email-actions.test.ts` (Resend dispatch, rate limiting, 60s cooldown, email masking, client contact persistence, dual send modes). |
 | **End-to-End Multi-Context User Journey** | **DONE** | Playwright E2E in `tests/e2e/full-journey.spec.ts` (isolated unauthenticated browser context approval, rejection, and revision revocation). |
 | **Accessibility (WCAG AA) & Mobile UI** | **DONE** | Axe-Core Playwright test in `tests/e2e/accessibility.spec.ts` (10/10 passing, focus traps, zero overflow at 360px). |
 | **Database-Backed Rate Limiting** | **DONE** | 5 unit tests in `tests/unit/rate-limit.test.ts` (IP-hash and token prefix throttling on `/approve/[token]`). |
-| **Transactional Email Notifications** | **PARTIAL** | Stubbed with graceful fallback; copyable link modal informs user that no external email was sent (Roadmap P1). |
+| **Transactional Email Notifications** | **DONE** | Resend integration for team invitations and client proposal approvals with honest status handling (`sent`, `failed`, `not_configured` with manual copyable fallback link). |
 | **Client Email OTP Verification** | **NOT DONE** | Bearer link identity with self-declared legal name in MVP; OTP verification planned for Roadmap P1. |
 | **Stripe Scope Deposit Collection** | **NOT DONE** | Documented limitation; scheduled for Roadmap P2. |
 
@@ -67,7 +68,7 @@ Configure the environment variables according to the table below:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** | Client & Server | The public anonymous API key for browser-scoped Supabase client requests governed by RLS. |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | **Server Only** | Administrative service-role key. **NEVER expose to client code.** Used solely in backend actions for public approvals. |
 | `NEXT_PUBLIC_APP_URL` | **Yes** | Client & Server | Base URL of the deployment (e.g., `http://localhost:3000` or `https://scopeguard.vercel.app`). |
-| `RESEND_API_KEY` | No | Server Only | Optional API key for Resend email dispatch (for team invitations). If unconfigured, invitations provide an honest manual copy link fallback. |
+| `RESEND_API_KEY` | No | Server Only | Optional API key for Resend email dispatch (for team invitations and client proposal delivery). If unconfigured, ScopeGuard provides honest manual copy link fallbacks. |
 | `EMAIL_FROM` | No | Server Only | Sender address for transactional emails (defaults to `ScopeGuard <notifications@scopeguard.agency>`). |
 
 ---
@@ -79,6 +80,7 @@ ScopeGuard provides idempotent SQL migrations in `supabase/migrations/`:
 2. `20261011130000_change_requests_and_approvals.sql` (Change requests, version snapshots, tokens, approvals, activity logs, stored procedures)
 3. `20261011140000_row_level_security.sql` (Default deny RLS policies, helper functions)
 4. `20261018230000_workspace_invitations.sql` (Workspace invitations table, RLS, cryptographic tokens, atomic acceptance stored procedures)
+5. `20261019000000_proposal_emails.sql` (Client contacts on projects, proposal_emails table, atomic cooldown & rate-limited procedures, RLS)
 
 ### Option A: Local Supabase CLI
 ```bash

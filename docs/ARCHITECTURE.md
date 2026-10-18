@@ -70,6 +70,7 @@ erDiagram
     CHANGE_REQUESTS ||--o{ CHANGE_REQUEST_VERSIONS : freezes
     CHANGE_REQUEST_VERSIONS ||--o{ APPROVAL_TOKENS : authorizes
     CHANGE_REQUEST_VERSIONS ||--o| APPROVALS : records
+    CHANGE_REQUESTS ||--o{ PROPOSAL_EMAILS : dispatches
     WORKSPACES ||--o{ ACTIVITY_LOGS : audits
     APPROVAL_TOKENS ||--o{ APPROVAL_ATTEMPTS : limits
 
@@ -94,6 +95,8 @@ erDiagram
         uuid workspace_id FK
         text name
         text client_name
+        text client_contact_name
+        text client_contact_email
         text currency
         bigint budget_minor
         bigint hourly_rate_minor
@@ -157,6 +160,21 @@ erDiagram
         text actor_name
         text action
         jsonb metadata
+    }
+
+    PROPOSAL_EMAILS {
+        uuid id PK
+        uuid workspace_id FK
+        uuid change_request_id FK
+        uuid version_id FK
+        text recipient_email
+        text recipient_name
+        text status
+        uuid sent_by FK
+        boolean personal_note_present
+        text send_attempt_key
+        timestamptz sent_at
+        timestamptz created_at
     }
 ```
 

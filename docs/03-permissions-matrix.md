@@ -48,6 +48,10 @@
 | | Re-issue / revoke active token | ✅ | ✅ | ❌ | ❌ | ❌ | Postgres RPC `reissue_approval_token` |
 | | Revise pending proposal | ✅ | ✅ | ❌ | ❌ | ❌ | Postgres RPC `revise_change_request` |
 | | Withdraw pending proposal | ✅ | ✅ | ❌ | ❌ | ❌ | Postgres RPC `withdraw_change_request` |
+| **Send to Client**| Send proposal email to client | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action (`requireRole(['owner','manager'])`) & RPC `begin_proposal_email` |
+| | Set/update project client contact | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action & RPC `set_project_client_contact` |
+| | View proposal email delivery history | ✅ | ✅ | ❌ | ❌ | ❌ | Server Action & RLS (`proposal_emails` SELECT for owner/manager only) |
+| | Direct SQL write to `proposal_emails`| ❌ | ❌ | ❌ | ❌ | ❌ | Default deny RLS on `proposal_emails` (INSERT/UPDATE via RPC only) |
 | **Client Portal**| View proposal via token (`/approve/[token]`)| ❌ | ❌ | ❌ | ✅ (Bound token) | ❌ | Public Service-Role RPC `get_proposal_by_token` |
 | | Submit decision (Approve/Reject) | ❌ | ❌ | ❌ | ✅ (Bound token) | ❌ | Public Service-Role RPC `submit_decision` |
 | **Audit & Log** | View activity feed | ✅ | ✅ | ✅ | ❌ | ❌ | RLS (`activity_logs` SELECT on workspace) |
