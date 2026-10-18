@@ -22,14 +22,48 @@ export interface ActionState<T = unknown> {
 }
 
 /**
+ * Mask an email address for safe server-side diagnostic logging.
+ * Never leaks full user identities or passwords into server logs.
+ * Example: user@domain.com -> u***@domain.com
+ */
+function maskEmail(email: string): string {
+  const parts = email.split("@");
+  if (parts.length !== 2) return "***@***";
+  const [local, domain] = parts;
+  const visible = local.length > 2 ? local.slice(0, 2) : local.slice(0, 1);
+  return `${visible}***@${domain}`;
+}
+
+/**
+ * Resolves the application base URL dynamically from environment or request headers.
+ * Defaults to http://localhost:3001 in development if not configured.
+ */
+function getBaseUrl(host?: string | null): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  }
+  if (host) {
+    const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+  return "http://localhost:3001";
+}
+
+export interface LoginResultData {
+  emailNotConfirmed?: boolean;
+  email?: string;
+}
+
+/**
  * Log in with email and password.
  * Redirects to safe next URL on success.
- * Returns generic error message on failure to prevent email enumeration.
+ * Maps error states (unconfirmed email, rate limiting) to helpful actionable feedback
+ * while logging masked diagnostics server-side.
  */
 export async function loginAction(
-  _prevState: ActionState | null,
+  _prevState: ActionState<LoginResultData> | null,
   formData: FormData
-): Promise<ActionState> {
+): Promise<ActionState<LoginResultData>> {
   const rawData = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -55,7 +89,36 @@ export async function loginAction(
     });
 
     if (error || !signInData?.user) {
-      // Generic error message: do not reveal whether the email exists or password was wrong
+      const code = (error as { code?: string })?.code;
+      const errorMsg = error?.message?.toLowerCase() || "";
+
+      if (code === "email_not_confirmed" || errorMsg.includes("email not confirmed")) {
+        console.warn(`[Auth Diagnostics] Sign-in failed for ${maskEmail(email)}: email_not_confirmed`);
+        return {
+          success: false,
+          message:
+            "Your email address has not been verified yet. Please check your inbox or resend the verification email below.",
+          data: { emailNotConfirmed: true, email },
+        };
+      }
+
+      if (
+        code === "over_request_rate_limit" ||
+        code === "over_email_send_rate_limit" ||
+        errorMsg.includes("rate limit")
+      ) {
+        console.warn(
+          `[Auth Diagnostics] Sign-in failed for ${maskEmail(email)}: rate_limited (${code || "rate_limit"})`
+        );
+        return {
+          success: false,
+          message: "Too many login attempts. Please wait a few moments before trying again.",
+        };
+      }
+
+      console.warn(
+        `[Auth Diagnostics] Sign-in failed for ${maskEmail(email)}: invalid_credentials (${code || "unknown"})`
+      );
       return {
         success: false,
         message: "Invalid email or password. Please check your credentials and try again.",
@@ -132,9 +195,8 @@ export async function signUpAction(
     const supabase = await createClient();
     const adminClient = createServiceRoleClient();
     const headerList = await headers();
-    const host = headerList.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const appUrl = `${protocol}://${host}`;
+    const host = headerList.get("host");
+    const appUrl = getBaseUrl(host);
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -355,9 +417,8 @@ export async function resendVerificationAction(
   try {
     const supabase = await createClient();
     const headerList = await headers();
-    const host = headerList.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const appUrl = `${protocol}://${host}`;
+    const host = headerList.get("host");
+    const appUrl = getBaseUrl(host);
 
     const { error } = await supabase.auth.resend({
       type: "signup",
@@ -418,15 +479,20 @@ export async function forgotPasswordAction(
   try {
     const supabase = await createClient();
     const headerList = await headers();
-    const host = headerList.get("host") || "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-    const appUrl = `${protocol}://${host}`;
+    const host = headerList.get("host");
+    const appUrl = getBaseUrl(host);
 
-    await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
     });
-  } catch {
-    // Ignore internal errors to prevent timing / enumeration attacks
+
+    if (error) {
+      console.warn(
+        `[Auth Diagnostics] Password reset failed for ${maskEmail(email)}: ${error.code || error.message}`
+      );
+    }
+  } catch (err) {
+    console.warn(`[Auth Diagnostics] Unexpected error resetting password for ${maskEmail(email)}:`, err);
   }
 
   // Always return identical generic success message

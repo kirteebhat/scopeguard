@@ -45,7 +45,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {suffixElement && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500 text-sm">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none [&>button]:pointer-events-auto [&>a]:pointer-events-auto text-slate-500 text-sm">
             {suffixElement}
           </div>
         )}

@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
     trace: "on-first-retry",
   },
   projects: [
@@ -26,7 +26,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run start",
-    url: "http://localhost:3000",
+    url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001",
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
     stdout: "pipe",
