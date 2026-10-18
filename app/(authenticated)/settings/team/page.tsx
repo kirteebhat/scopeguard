@@ -1,6 +1,8 @@
 import React from "react";
 import { Metadata } from "next";
 import { getWorkspaceMembers } from "@/lib/data/members";
+import { getWorkspaceContextOrRedirect } from "@/lib/data/auth-context";
+import { listWorkspaceInvitations, WorkspaceInvitationItem } from "@/lib/data/invitations";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
 import {
@@ -11,9 +13,11 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/Table";
-import { Users, MailQuestion } from "lucide-react";
+import { Users } from "lucide-react";
 import { SettingsNav } from "../SettingsNav";
 import { MemberRoleSelector } from "./MemberRoleSelector";
+import { InviteMemberCard } from "./InviteMemberCard";
+import { PendingInvitationsList } from "./PendingInvitationsList";
 
 export const metadata: Metadata = {
   title: "Team Members - ScopeGuard",
@@ -21,8 +25,22 @@ export const metadata: Metadata = {
 };
 
 export default async function TeamSettingsPage() {
-  const { members, currentUserRole, currentUserId } = await getWorkspaceMembers();
-  const isOwner = currentUserRole === "owner";
+  const context = await getWorkspaceContextOrRedirect();
+  const { members } = await getWorkspaceMembers();
+  const isOwner = context.role === "owner";
+  const isManager = context.role === "manager";
+  const canInvite = isOwner || isManager;
+
+  let invitations: WorkspaceInvitationItem[] = [];
+  if (canInvite) {
+    try {
+      invitations = await listWorkspaceInvitations();
+    } catch {
+      invitations = [];
+    }
+  }
+
+  const currentUserId = context.user.id;
 
   return (
     <div className="space-y-6">
@@ -170,29 +188,31 @@ export default async function TeamSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Invitations Section (Plain honest text per AGENTS.md rules - no fake button) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-900">
-            <MailQuestion className="w-4 h-4 text-slate-400" />
-            Invite Team Members
-          </CardTitle>
-          <CardDescription className="text-xs text-slate-500">
-            Team expansion and user onboarding.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-600 text-xs leading-relaxed space-y-1">
-            <p className="font-semibold text-slate-800">
-              Team invitations are coming in a future release
-            </p>
-            <p className="text-slate-500">
-              Direct email invitations and self-service invite links are not yet enabled for this MVP release.
-              In the current version, additional team members are provisioned by your system administrator.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Invitations Section */}
+      {canInvite ? (
+        <>
+          <InviteMemberCard
+            currentUserRole={context.role}
+            currentUserName={context.user.fullName || context.user.email}
+            workspaceName={context.workspace.name}
+          />
+          <PendingInvitationsList
+            initialInvitations={invitations}
+            isOwnerOrManager={canInvite}
+          />
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-slate-900">
+              Workspace Invitations
+            </CardTitle>
+            <CardDescription className="text-xs text-slate-500">
+              Only workspace owners and managers can invite new members to this workspace.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }
