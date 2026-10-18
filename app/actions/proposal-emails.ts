@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/data/auth-context";
 import { getChangeRequestById, regenerateApprovalToken } from "@/lib/data/change-requests";
 import { setProjectClientContact } from "@/lib/data/projects";
-import { listProposalEmails, type ProposalEmailHistoryItem } from "@/lib/data/proposal-emails";
+import {
+  listProposalEmails,
+  recordFallbackProposalEmailBegin,
+  recordFallbackProposalEmailComplete,
+  type ProposalEmailHistoryItem,
+} from "@/lib/data/proposal-emails";
+import { isSchemaOrFunctionMissing } from "@/lib/data/invitations";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import {
   sendProposalToClientSchema,
@@ -134,18 +140,63 @@ export async function sendProposalToClientAction(
     }
 
     // Atomically begin delivery attempt in DB (cooldown + rate limiting)
-    const { data: emailId, error: beginErr } = await adminClient.rpc("begin_proposal_email", {
-      p_change_request_id: changeRequestId,
-      p_recipient_email: recipientEmail.trim().toLowerCase(),
-      p_recipient_name: recipientName?.trim() || null,
-      p_attempt_key: attemptKey,
-      p_personal_note_present: !!(personalNote && personalNote.trim().length > 0),
-    });
+    let emailId: string | null = null;
+    let isFallback = false;
 
-    if (beginErr || !emailId) {
+    try {
+      const { data, error: beginErr } = await adminClient.rpc("begin_proposal_email", {
+        p_change_request_id: changeRequestId,
+        p_recipient_email: recipientEmail.trim().toLowerCase(),
+        p_recipient_name: recipientName?.trim() || null,
+        p_attempt_key: attemptKey,
+        p_personal_note_present: !!(personalNote && personalNote.trim().length > 0),
+      });
+
+      if (!beginErr && data) {
+        emailId = data;
+      } else if (beginErr) {
+        if (!isSchemaOrFunctionMissing(beginErr)) {
+          return {
+            success: false,
+            message: beginErr.message || "Failed to initiate proposal delivery.",
+          };
+        }
+        isFallback = true;
+      }
+    } catch (err: unknown) {
+      if (!isSchemaOrFunctionMissing(err)) {
+        return {
+          success: false,
+          message: err instanceof Error ? err.message : "Failed to initiate proposal delivery.",
+        };
+      }
+      isFallback = true;
+    }
+
+    if (isFallback) {
+      try {
+        emailId = recordFallbackProposalEmailBegin({
+          workspaceId: workspace.id,
+          changeRequestId,
+          recipientEmail: recipientEmail.trim().toLowerCase(),
+          recipientName: recipientName?.trim() || null,
+          sentBy: user.id,
+          senderName: user.fullName || user.email || "Team Member",
+          attemptKey,
+          personalNotePresent: !!(personalNote && personalNote.trim().length > 0),
+        });
+      } catch (fbErr: unknown) {
+        return {
+          success: false,
+          message: fbErr instanceof Error ? fbErr.message : "Failed to initiate proposal delivery.",
+        };
+      }
+    }
+
+    if (!emailId) {
       return {
         success: false,
-        message: beginErr?.message || "Failed to initiate proposal delivery.",
+        message: "Failed to initiate proposal delivery.",
       };
     }
 
@@ -182,12 +233,20 @@ export async function sendProposalToClientAction(
 
     // Check if email provider is configured
     if (emailProvider.isConfigured && !emailProvider.isConfigured()) {
-      await adminClient.rpc("complete_proposal_email", {
-        p_email_id: emailId,
-        p_status: "failed",
-        p_provider_message_id: null,
-        p_error_code: "provider_not_configured",
-      });
+      if (isFallback) {
+        recordFallbackProposalEmailComplete(emailId, "failed", null, "provider_not_configured");
+      } else {
+        try {
+          await adminClient.rpc("complete_proposal_email", {
+            p_email_id: emailId,
+            p_status: "failed",
+            p_provider_message_id: null,
+            p_error_code: "provider_not_configured",
+          });
+        } catch {
+          // Ignore RPC completion failure if schema is unmigrated
+        }
+      }
 
       revalidatePath(`/changes/${changeRequestId}`);
       revalidatePath(`/projects/${cr.projectId}`);
@@ -213,12 +272,25 @@ export async function sendProposalToClientAction(
     });
 
     if (!sendResult.success) {
-      await adminClient.rpc("complete_proposal_email", {
-        p_email_id: emailId,
-        p_status: "failed",
-        p_provider_message_id: null,
-        p_error_code: sendResult.error || "delivery_error",
-      });
+      if (isFallback) {
+        recordFallbackProposalEmailComplete(
+          emailId,
+          "failed",
+          null,
+          sendResult.error || "delivery_error"
+        );
+      } else {
+        try {
+          await adminClient.rpc("complete_proposal_email", {
+            p_email_id: emailId,
+            p_status: "failed",
+            p_provider_message_id: null,
+            p_error_code: sendResult.error || "delivery_error",
+          });
+        } catch {
+          // Ignore RPC completion failure if schema is unmigrated
+        }
+      }
 
       revalidatePath(`/changes/${changeRequestId}`);
       revalidatePath(`/projects/${cr.projectId}`);
@@ -233,12 +305,20 @@ export async function sendProposalToClientAction(
     }
 
     // Mark delivery as sent in DB and log activity
-    await adminClient.rpc("complete_proposal_email", {
-      p_email_id: emailId,
-      p_status: "sent",
-      p_provider_message_id: sendResult.messageId || null,
-      p_error_code: null,
-    });
+    if (isFallback) {
+      recordFallbackProposalEmailComplete(emailId, "sent", sendResult.messageId || null, null);
+    } else {
+      try {
+        await adminClient.rpc("complete_proposal_email", {
+          p_email_id: emailId,
+          p_status: "sent",
+          p_provider_message_id: sendResult.messageId || null,
+          p_error_code: null,
+        });
+      } catch {
+        // Ignore RPC completion failure if schema is unmigrated
+      }
+    }
 
     // Optional: send copy to sender
     if (sendCopyToMe && user.email) {

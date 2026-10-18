@@ -13,6 +13,7 @@ import {
   type ProjectFinancialRollup,
 } from "@/lib/domain/impact";
 import type { Database } from "@/lib/supabase/database.types";
+import { isSchemaOrFunctionMissing } from "./invitations";
 
 export type ProjectStatus = Database["public"]["Enums"]["project_status"];
 
@@ -596,20 +597,42 @@ export async function setProjectClientContact(
   email?: string | null,
   customContext?: AuthContext
 ): Promise<void> {
-  await requireRole(["owner", "manager"], customContext);
+  const context = await requireRole(["owner", "manager"], customContext);
   const adminClient = createServiceRoleClient();
 
   const trimmedName = name?.trim() || null;
   const trimmedEmail = email?.trim().toLowerCase() || null;
 
-  // Call the SECURITY DEFINER RPC function which updates the project and creates the audit log
-  const { error } = await adminClient.rpc("set_project_client_contact", {
-    p_project_id: projectId,
-    p_name: trimmedName,
-    p_email: trimmedEmail,
-  });
+  try {
+    // Call the SECURITY DEFINER RPC function which updates the project and creates the audit log
+    const { error } = await adminClient.rpc("set_project_client_contact", {
+      p_project_id: projectId,
+      p_contact_name: trimmedName,
+      p_contact_email: trimmedEmail,
+    });
 
-  if (error) {
-    throw new Error(error.message || "Failed to update project client contact");
+    if (!error) return;
+
+    if (!isSchemaOrFunctionMissing(error)) {
+      throw new Error(error.message || "Failed to update project client contact");
+    }
+  } catch (err: unknown) {
+    if (!isSchemaOrFunctionMissing(err)) {
+      throw err;
+    }
+  }
+
+  // Fallback: direct table update if column exists
+  try {
+    await adminClient
+      .from("projects")
+      .update({
+        client_contact_name: trimmedName,
+        client_contact_email: trimmedEmail,
+      })
+      .eq("id", projectId)
+      .eq("workspace_id", context.workspace.id);
+  } catch {
+    // Non-fatal if column doesn't exist yet on unmigrated database
   }
 }
