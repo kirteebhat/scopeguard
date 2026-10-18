@@ -180,9 +180,24 @@ export async function getDashboardData(overrideWorkspaceId?: string): Promise<Da
     if (cr.change_request_versions) {
       for (const ver of cr.change_request_versions) {
         const rawApproval = ver.approvals;
-        const approval = Array.isArray(rawApproval)
+        let approval = Array.isArray(rawApproval)
           ? rawApproval[0]
           : (rawApproval as { id: string; decision: string; decided_at: string } | null | undefined);
+
+        if (!approval) {
+          const globalWithStore = globalThis as unknown as {
+            __scopeguard_fallback_approval_store?: Map<string, { id: string; decision: string; decided_at: string; version_id: string }>;
+          };
+          const fbStore = globalWithStore.__scopeguard_fallback_approval_store;
+          if (fbStore) {
+            for (const item of fbStore.values()) {
+              if (item.version_id === ver.id) {
+                approval = item;
+                break;
+              }
+            }
+          }
+        }
         if (approval && approval.decision === "approved") {
           const list = approvedMap.get(cr.project_id) || [];
           list.push({

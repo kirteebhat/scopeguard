@@ -578,6 +578,20 @@ async function submitDecisionFallback(
     audit_metadata: auditMeta,
   });
 
+  try {
+    await adminClient.from("approvals").insert({
+      id: approvalId,
+      version_id: versionId,
+      decision,
+      decided_at: now,
+      decision_actor_type: "client_link",
+      actor_name: actorName.trim(),
+      audit_metadata: auditMeta as never,
+    });
+  } catch {
+    // DB insert caught or ignored if duplicate/offline
+  }
+
   // Update change request status to terminal
   const versionRecord = fallbackVersionStore.get(versionId);
   if (versionRecord) {
