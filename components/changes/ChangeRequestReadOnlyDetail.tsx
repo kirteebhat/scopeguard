@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Calendar,
   User,
+  Compass,
 } from "lucide-react";
 
 import { ActivityFeed } from "@/components/activity/ActivityFeed";
@@ -109,7 +110,39 @@ export function ChangeRequestReadOnlyDetail({
     }
   };
 
+  const getNextActionPrompt = () => {
+    switch (changeRequest.status) {
+      case "pending_approval":
+        return {
+          badge: "Awaiting Client Sign-Off",
+          title: "Share Link & Await Decision",
+          text: "Share the active approval link with your client. If scope changed before approval, click 'Revise Proposal' to return to draft without breaking version history.",
+        };
+      case "approved":
+        return {
+          badge: "Scope Incorporated",
+          title: "Proceed with Approved Work",
+          text: "Client sign-off secured! This addition is now part of the active contract baseline. You can safely execute the requested deliverables.",
+        };
+      case "rejected":
+        return {
+          badge: "Proposal Declined",
+          title: "Scope Request Closed",
+          text: "The client declined this proposal. Do not proceed with unapproved deliverables unless a new proposal is negotiated.",
+        };
+      case "withdrawn":
+        return {
+          badge: "Proposal Cancelled",
+          title: "Withdrawn by Agency",
+          text: "This proposal was cancelled by your agency. You may create a fresh proposal if scope requirements resurface.",
+        };
+      default:
+        return null;
+    }
+  };
+
   const banner = getBannerMessage();
+  const nextAction = getNextActionPrompt();
 
   const handleRegenerateLink = async () => {
     setIsRegenerating(true);
@@ -216,6 +249,28 @@ export function ChangeRequestReadOnlyDetail({
         </div>
       )}
 
+      {/* Contextual Next Action Callout */}
+      {nextAction && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/40 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-full">
+                  {nextAction.badge}
+                </span>
+                <h3 className="text-xs font-bold text-slate-900">{nextAction.title}</h3>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                {nextAction.text}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* State banner */}
       {banner && (
         <div
@@ -237,11 +292,14 @@ export function ChangeRequestReadOnlyDetail({
           id="pendingWorkflowBar"
         >
           <div>
-            <h3 className="text-xs font-bold text-slate-900">
-              Proposal Decision Pending (Version {changeRequest.currentVersion || 1})
-            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-xs font-bold text-slate-900">
+                Proposal Decision Pending (Version {changeRequest.currentVersion || 1})
+              </h3>
+              <Badge variant="pending">Active Client Token</Badge>
+            </div>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Client approval link is active. You can generate a fresh link or revert to draft.
+              Client approval link is active. If needed, you can revoke and generate a new link or revise back to draft.
             </p>
           </div>
 

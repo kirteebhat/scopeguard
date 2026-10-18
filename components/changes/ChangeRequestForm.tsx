@@ -14,6 +14,7 @@ import {
   publishChangeRequestAction,
 } from "@/app/actions/change-requests";
 import { PublishedLinkDialog } from "./PublishedLinkDialog";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 import type { ProjectDetail } from "@/lib/data/projects";
 import type { DeliverableItem } from "@/lib/data/deliverables";
 import type { ChangeRequestItem } from "@/lib/data/change-requests";
@@ -136,7 +137,7 @@ export function ChangeRequestForm({
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(clientChangeRequestFormSchema),
     defaultValues: {
@@ -154,6 +155,8 @@ export function ChangeRequestForm({
       internalNotes: initialData?.internalNotes || "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   const watchedTitle = watch("title");
   const watchedDescription = watch("description");

@@ -21,6 +21,8 @@ import {
   FileText,
   ArrowRight,
   Plus,
+  Download,
+  Compass,
 } from "lucide-react";
 
 interface ProjectDetailPageProps {
@@ -59,6 +61,41 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const changeRequests = await getProjectChangeRequests(projectId);
   const activities = await getProjectActivityLogs(projectId);
 
+  // Next action computation based on project & change request states
+  const pendingCount = changeRequests.filter((c) => c.status === "pending_approval").length;
+  const draftCount = changeRequests.filter((c) => c.status === "draft").length;
+
+  let nextAction: { title: string; description: string; href: string; label: string } | null = null;
+  if (deliverables.length === 0) {
+    nextAction = {
+      title: "Add Contract Deliverables",
+      description: "Define baseline deliverables agreed in the statement of work to easily detect scope creep.",
+      href: `/projects/${project.id}/settings`,
+      label: "Add Deliverables",
+    };
+  } else if (pendingCount > 0) {
+    nextAction = {
+      title: `${pendingCount} Proposal${pendingCount > 1 ? "s" : ""} Pending Client Sign-off`,
+      description: "Client approval links are currently active. Review proposals or resend links to secure client decision.",
+      href: `/projects/${project.id}/changes`,
+      label: "Review Pending Proposals",
+    };
+  } else if (draftCount > 0) {
+    nextAction = {
+      title: "Draft Change Request in Progress",
+      description: "You have unsubmitted change orders. Finalize scope details and publish client proposal links.",
+      href: `/projects/${project.id}/changes`,
+      label: "Review Drafts",
+    };
+  } else {
+    nextAction = {
+      title: "Scope Baseline Protected",
+      description: "All change orders are resolved. When new client requests emerge, create a change request before beginning unbilled work.",
+      href: `/changes/new?projectId=${project.id}`,
+      label: "New Change Request",
+    };
+  }
+
   const getDeliverableStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
@@ -81,6 +118,16 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
         description={`Client: ${project.clientName} • Currency: ${project.currency} • Start Date: ${project.startDate}`}
         actions={
           <div className="flex items-center gap-2">
+            <a
+              href={`/api/projects/${project.id}/export-csv`}
+              download
+              className="inline-flex"
+              id="exportProjectCsvButton"
+            >
+              <Button variant="secondary" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                Export CSV
+              </Button>
+            </a>
             <Link href={`/projects/${project.id}/changes`}>
               <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
                 Change Orders ({changeRequests.length})
@@ -104,6 +151,33 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
           </div>
         }
       />
+
+      {/* Contextual Next Action Prompt */}
+      {nextAction && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50/80 via-white to-indigo-50/40 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+              <Compass className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-full">
+                  Recommended Next Step
+                </span>
+                <h3 className="text-xs font-bold text-slate-900">{nextAction.title}</h3>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                {nextAction.description}
+              </p>
+            </div>
+          </div>
+          <Link href={nextAction.href} className="shrink-0">
+            <Button variant="primary" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+              {nextAction.label}
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Project Impact Card (Pillars for Contract Value, Approved Changes, Estimates Pending) */}
       <ProjectImpactCard project={project} />

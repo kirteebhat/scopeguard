@@ -15,6 +15,7 @@ import { Select } from "@/components/ui/Select";
 import { FormField } from "@/components/ui/FormField";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
 import { AlertCircle, Plus, Trash2, Layers, DollarSign, Calendar } from "lucide-react";
+import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
 
 const clientProjectFormSchema = z
   .object({
@@ -87,7 +88,7 @@ export function NewProjectForm() {
     register,
     handleSubmit,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(clientProjectFormSchema),
     defaultValues: {
@@ -101,6 +102,8 @@ export function NewProjectForm() {
       description: "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty || deliverables.length > 0);
 
   const selectedCurrency = watch("currency") || "USD";
   const currencySymbol = SUPPORTED_CURRENCIES[selectedCurrency]?.symbol || selectedCurrency;
