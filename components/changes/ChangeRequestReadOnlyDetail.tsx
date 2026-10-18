@@ -64,6 +64,7 @@ export function ChangeRequestReadOnlyDetail({
 
   const [publishedLink, setPublishedLink] = useState<{
     shareUrl: string;
+    rawToken?: string;
     expiresAt: string;
   } | null>(null);
 
@@ -163,6 +164,7 @@ export function ChangeRequestReadOnlyDetail({
       }
       setPublishedLink({
         shareUrl: res.data.shareUrl,
+        rawToken: res.data.rawToken,
         expiresAt: res.data.expiresAt,
       });
     } catch (err: unknown) {
@@ -609,6 +611,16 @@ export function ChangeRequestReadOnlyDetail({
           expiresAt={publishedLink.expiresAt}
           versionNumber={changeRequest.currentVersion || undefined}
           title="New Approval Link Generated"
+          changeRequestId={changeRequest.id}
+          rawToken={publishedLink.rawToken}
+          projectName={project.name}
+          changeRequestTitle={changeRequest.title}
+          changeRequestDescription={changeRequest.description}
+          additionalCostFormatted={formattedCost}
+          currency={project.currency}
+          proposedDeadline={changeRequest.proposedDeadline}
+          clientContactEmail={project.clientContactEmail}
+          clientContactName={project.clientContactName}
         />
       )}
 
