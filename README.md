@@ -240,8 +240,8 @@ ScopeGuard is configured for zero-config deployment on Vercel:
 - **Install Command:** `npm install`
 - **Output Directory:** `.next`
 - **Framework Preset:** Next.js
-- **Live Deployment URL:** `https://scopeguard-pearl.vercel.app` (or `[TO BE FILLED BY AUTHOR: custom live domain]`)
-- **Repository URL:** [`https://github.com/kirteebhat/scopeguard.git`](https://github.com/kirteebhat/scopeguard.git)
+- **Live Deployment URL:** [https://scopeguard-pearl.vercel.app](https://scopeguard-pearl.vercel.app)
+- **Repository URL:** [`https://github.com/kirteebhat/scopeguard`](https://github.com/kirteebhat/scopeguard)
 
 For comprehensive step-by-step instructions on Vercel deployment, environment variable configuration, and Supabase Auth redirect settings, refer to [`SETUP_AND_DEPLOYMENT.md`](SETUP_AND_DEPLOYMENT.md).
 
