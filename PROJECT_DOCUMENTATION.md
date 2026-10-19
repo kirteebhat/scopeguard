@@ -153,7 +153,7 @@ flowchart TD
     end
 
     AgencyClient -->|HTTPS / Session Cookies| EdgeMiddleware
-    PublicClient -->|GET /approve/:token| EdgeMiddleware
+    PublicClient -->|GET /approve/token| EdgeMiddleware
     EdgeMiddleware --> AppRouterSSR
 
     AgencyClient -->|Form Action POST| ServerActionsMutations
@@ -467,7 +467,7 @@ sequenceDiagram
     Action->>Action: Convert budget to integer minor units
     Action->>DB: INSERT INTO projects (RLS verified)
     DB-->>Action: Returns project_id
-    Action-->>UI: Redirect to /projects/:projectId
+    Action-->>UI: Redirect to /projects/[projectId]
     Agency->>UI: Add Deliverables (Scope items)
     UI->>DB: INSERT INTO deliverables (project_id, title)
     DB-->>UI: Deliverables rendered in contract baseline
@@ -515,8 +515,8 @@ sequenceDiagram
     RPC->>DB: UPDATE change_requests SET status = 'pending_approval'
     RPC->>DB: INSERT INTO activity_logs ('change_request_published')
     RPC-->>Action: Success payload
-    Action-->>UI: Return raw approval link (/approve/:token) in modal
-    Note over UI: Raw link shown once; user can copy or email to client
+    Action-->>UI: Return raw approval link (/approve/[token]) in modal
+    Note over UI: Raw link shown once, user can copy or email to client
 ```
 
 ### 6.4 Client Review & Atomic Decision Recording
@@ -689,7 +689,7 @@ flowchart LR
     end
 
     AgencyUser -->|HTTPS| VercelCDN
-    ClientUser -->|HTTPS /approve/:token| VercelCDN
+    ClientUser -->|HTTPS /approve/token| VercelCDN
     VercelCDN --> VercelFunctions
 
     VercelFunctions -->|User JWT Cookie| SupabasePostgres

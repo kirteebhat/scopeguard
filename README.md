@@ -121,7 +121,7 @@ flowchart TD
     AgencyUser -->|HTTPS & Session Cookies| Middleware
     Middleware --> ServerComponents
     AgencyUser -->|Server Action Mutations| ServerActions
-    ClientUser -->|GET /approve/:token| ServerComponents
+    ClientUser -->|GET /approve/token| ServerComponents
     ClientUser -->|Submit Decision Action| ServerActions
 
     ServerActions --> DomainLogic
