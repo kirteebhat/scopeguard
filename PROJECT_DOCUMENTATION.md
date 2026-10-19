@@ -1,12 +1,12 @@
 # ScopeGuard: Software Scope-Change Management System
 
-**Academic Review Documentation**  
+**Academic Project Report & Technical Specification**  
 **Course / Degree:** Final-Year Capstone Project / B.Tech Computer Science & Engineering  
 **Project Title:** ScopeGuard — A Multi-Tenant Scope-Change Management and Real-Time Budget Protection Platform  
-**Implementation Technology:** Next.js 15 (App Router), TypeScript, Tailwind CSS, Supabase (PostgreSQL & SSR Auth), Resend  
-**Hosting Environment:** Vercel (Production Serverless Deployment)  
-**Source Code Repository:** [`https://github.com/kirteebhat/scopeguard.git`](https://github.com/kirteebhat/scopeguard.git)  
-**Live Production Deployment:** `https://scopeguard-pearl.vercel.app` (or `[TO BE FILLED BY AUTHOR: live URL]`)  
+**Implementation Technology:** Next.js 15 (App Router), TypeScript, Tailwind CSS, Supabase (PostgreSQL 15 & SSR Auth), Resend  
+**Hosting Environment:** Vercel (Edge & Serverless Node.js Runtime)  
+**Source Code Repository:** [https://github.com/kirteebhat/scopeguard](https://github.com/kirteebhat/scopeguard)  
+**Live Production Deployment:** [https://scopeguard-pearl.vercel.app](https://scopeguard-pearl.vercel.app)  
 **Document Version:** 1.0.0 (Comprehensive Technical Report)  
 **Date of Report:** 2026-10-19  
 
@@ -14,7 +14,7 @@
 
 ## Abstract
 
-In commercial software development consultancies, independent agencies, and freelance contracting, unbilled out-of-scope work—commonly termed "scope creep"—is a primary driver of margin erosion, delivery delays, and invoice disputes. Traditional scope-management procedures rely on formal contractual amendments, PDF change orders, or heavyweight digital signature suites, which introduce friction that discourages billing for rapid, incremental scope adjustments. 
+In commercial software development consultancies, digital agencies, and independent contracting teams, unbilled out-of-scope work—commonly termed "scope creep"—is a primary driver of margin erosion, delivery delays, and invoice disputes. Traditional scope-management procedures rely on formal contractual amendments, PDF change orders, or heavyweight digital signature suites, which introduce administrative friction that discourages billing for rapid, incremental scope adjustments. 
 
 **ScopeGuard** is a full-stack, multi-tenant software-as-a-service (SaaS) web application designed to solve this problem by providing an itemized change request workflow and an unauthenticated, zero-friction client approval portal. Using cryptographically secure 256-bit URL-safe bearer tokens and immutable database snapshots, ScopeGuard enables agency project managers to draft, calculate, and publish change orders that external clients can approve or reject in seconds from any mobile device without logging in or downloading software. 
 
@@ -36,7 +36,9 @@ Agencies face a structural operational dilemma:
 ### 1.2 Core Hypothesis
 The engineering hypothesis behind ScopeGuard states:
 
-$$\text{Friction-Free Approval Portal} + \text{Transparent Impact Modeling} \implies \text{Zero Unbilled Scope Creep}$$
+$$
+\text{Friction-Free Approval Portal} + \text{Transparent Impact Modeling} \implies \text{Zero Unbilled Scope Creep}
+$$
 
 By decoupling client approval from formal user accounts (using secure, time-limited, unguessable cryptographic tokens) and presenting side-by-side impact comparisons (cost and deadline delta), clients will promptly authorize legitimate scope modifications without friction.
 
@@ -71,28 +73,28 @@ By decoupling client approval from formal user accounts (using secure, time-limi
 
 | Req ID | Requirement Description | Status | Verification & Evidence |
 |---|---|:---:|---|
-| **FR-01** | User authentication with email and password, password recovery, and email verification. | **Implemented** | [`app/actions/auth.ts`](file:///c:/ScopeGuard/app/actions/auth.ts), [`tests/unit/validation-auth.test.ts`](file:///c:/ScopeGuard/tests/unit/validation-auth.test.ts) |
+| **FR-01** | User authentication with email and password, password recovery, and email verification. | **Implemented** | [`app/actions/auth.ts`](app/actions/auth.ts), [`tests/unit/validation-auth.test.ts`](tests/unit/validation-auth.test.ts) |
 | **FR-02** | Automatic user profile provisioning upon auth signup via database trigger. | **Implemented** | `supabase/migrations/20261011120000_initial_schema.sql` (`on_auth_user_created`) |
-| **FR-03** | Multi-tenant workspace creation with unique URL-safe slug and owner assignment. | **Implemented** | `create_workspace` RPC, [`app/actions/workspace.ts`](file:///c:/ScopeGuard/app/actions/workspace.ts) |
-| **FR-04** | Role-based authorization distinguishing `owner`, `manager`, and `member` permissions. | **Implemented** | RLS helper `workspace_role()`, [`tests/integration/rls.test.ts`](file:///c:/ScopeGuard/tests/integration/rls.test.ts) (28 test cases) |
-| **FR-05** | Project management: create, edit, view baseline budget, currency, and original deadline. | **Implemented** | [`app/actions/projects.ts`](file:///c:/ScopeGuard/app/actions/projects.ts), [`tests/unit/projects.test.ts`](file:///c:/ScopeGuard/tests/unit/projects.test.ts) |
-| **FR-06** | Deliverables management: add, edit, link to project, and track completion status. | **Implemented** | [`app/actions/deliverables.ts`](file:///c:/ScopeGuard/app/actions/deliverables.ts), [`tests/integration/projects-deliverables.test.ts`](file:///c:/ScopeGuard/tests/integration/projects-deliverables.test.ts) |
-| **FR-07** | Change request drafting with hourly calculation (`hours * rate`) and fixed-fee options. | **Implemented** | [`lib/domain/money.ts`](file:///c:/ScopeGuard/lib/domain/money.ts), [`tests/unit/money.test.ts`](file:///c:/ScopeGuard/tests/unit/money.test.ts) |
-| **FR-08** | Association of change requests with specific deliverables and proposed completion dates. | **Implemented** | [`lib/validation/change-requests.ts`](file:///c:/ScopeGuard/lib/validation/change-requests.ts), [`tests/unit/validation-domain.test.ts`](file:///c:/ScopeGuard/tests/unit/validation-domain.test.ts) |
+| **FR-03** | Multi-tenant workspace creation with unique URL-safe slug and owner assignment. | **Implemented** | `create_workspace` RPC, [`app/actions/workspace.ts`](app/actions/workspace.ts) |
+| **FR-04** | Role-based authorization distinguishing `owner`, `manager`, and `member` permissions. | **Implemented** | RLS helper `workspace_role()`, [`tests/integration/rls.test.ts`](tests/integration/rls.test.ts) (28 test cases) |
+| **FR-05** | Project management: create, edit, view baseline budget, currency, and original deadline. | **Implemented** | [`app/actions/projects.ts`](app/actions/projects.ts), [`tests/unit/projects.test.ts`](tests/unit/projects.test.ts) |
+| **FR-06** | Deliverables management: add, edit, link to project, and track completion status. | **Implemented** | [`app/actions/deliverables.ts`](app/actions/deliverables.ts), [`tests/integration/projects-deliverables.test.ts`](tests/integration/projects-deliverables.test.ts) |
+| **FR-07** | Change request drafting with hourly calculation (`hours * rate`) and fixed-fee options. | **Implemented** | [`lib/domain/money.ts`](lib/domain/money.ts), [`tests/unit/money.test.ts`](tests/unit/money.test.ts) |
+| **FR-08** | Association of change requests with specific deliverables and proposed completion dates. | **Implemented** | [`lib/validation/change-requests.ts`](lib/validation/change-requests.ts), [`tests/unit/validation-domain.test.ts`](tests/unit/validation-domain.test.ts) |
 | **FR-09** | Confidential agency notes captured in drafts but excluded from client-facing snapshots. | **Implemented** | `publish_change_request` RPC (omits `internal_notes` in JSONB snapshot) |
 | **FR-10** | Publishing proposal generates immutable version snapshot $v_N$ and 14-day token. | **Implemented** | `publish_change_request` RPC, `tr_block_version_mutation` trigger |
-| **FR-11** | Cryptographic token generation using 32 random bytes (base64url) and SHA-256 storage. | **Implemented** | [`lib/server/tokens.ts`](file:///c:/ScopeGuard/lib/server/tokens.ts), [`tests/unit/tokens.test.ts`](file:///c:/ScopeGuard/tests/unit/tokens.test.ts) |
-| **FR-12** | Public approval portal (`/approve/[token]`) displaying side-by-side commercial impact. | **Implemented** | [`app/approve/[token]/page.tsx`](file:///c:/ScopeGuard/app/approve/[token]/page.tsx), [`tests/e2e/client-approval.spec.ts`](file:///c:/ScopeGuard/tests/e2e/client-approval.spec.ts) |
-| **FR-13** | Atomic decision recording (approve/reject) with self-declared legal name and row locking. | **Implemented** | `submit_decision` RPC, [`tests/integration/approval-concurrency.test.ts`](file:///c:/ScopeGuard/tests/integration/approval-concurrency.test.ts) |
-| **FR-14** | Revising pending proposals revokes active token and reverts status to `draft`. | **Implemented** | `revise_change_request` RPC, [`tests/unit/state-machine.test.ts`](file:///c:/ScopeGuard/tests/unit/state-machine.test.ts) |
-| **FR-15** | Withdrawing pending proposals revokes token and locks request in terminal `withdrawn`. | **Implemented** | `withdraw_change_request` RPC, [`tests/unit/state-machine.test.ts`](file:///c:/ScopeGuard/tests/unit/state-machine.test.ts) |
-| **FR-16** | Re-issuing / regenerating approval token without incrementing version or altering draft. | **Implemented** | `regenerate_approval_token` RPC, [`app/actions/change-requests.ts`](file:///c:/ScopeGuard/app/actions/change-requests.ts) |
-| **FR-17** | Rollup metrics derived exclusively from approved version snapshots. | **Implemented** | [`lib/domain/impact.ts`](file:///c:/ScopeGuard/lib/domain/impact.ts), [`tests/unit/impact.test.ts`](file:///c:/ScopeGuard/tests/unit/impact.test.ts) |
-| **FR-18** | Workspace metrics grouped strictly by currency (no mixed-currency addition). | **Implemented** | `calculateWorkspaceRollup()` in [`lib/domain/impact.ts`](file:///c:/ScopeGuard/lib/domain/impact.ts) |
-| **FR-19** | Team member invitation workflow via 7-day token links and strict email matching. | **Implemented** | `workspace_invitations` table, [`app/actions/invitations.ts`](file:///c:/ScopeGuard/app/actions/invitations.ts) |
-| **FR-20** | Direct proposal email dispatch to client contact via Resend provider with rate limits. | **Implemented** | `proposal_emails` table, [`app/actions/proposal-emails.ts`](file:///c:/ScopeGuard/app/actions/proposal-emails.ts) |
-| **FR-21** | Audit activity log recording actor, entity, action, and sanitized metadata. | **Implemented** | `activity_logs` table, [`tests/integration/project-rollup-and-activity.test.ts`](file:///c:/ScopeGuard/tests/integration/project-rollup-and-activity.test.ts) |
-| **FR-22** | RFC 4180 compliant CSV export of approved project scope changes. | **Implemented** | [`app/api/projects/[projectId]/export-csv/route.ts`](file:///c:/ScopeGuard/app/api/projects/[projectId]/export-csv/route.ts) |
+| **FR-11** | Cryptographic token generation using 32 random bytes (base64url) and SHA-256 storage. | **Implemented** | [`lib/server/tokens.ts`](lib/server/tokens.ts), [`tests/unit/tokens.test.ts`](tests/unit/tokens.test.ts) |
+| **FR-12** | Public approval portal (`/approve/:token`) displaying side-by-side commercial impact. | **Implemented** | [`app/approve/[token]/page.tsx`](app/approve/[token]/page.tsx), [`tests/e2e/client-approval.spec.ts`](tests/e2e/client-approval.spec.ts) |
+| **FR-13** | Atomic decision recording (approve/reject) with self-declared legal name and row locking. | **Implemented** | `submit_decision` RPC, [`tests/integration/approval-concurrency.test.ts`](tests/integration/approval-concurrency.test.ts) |
+| **FR-14** | Revising pending proposals revokes active token and reverts status to `draft`. | **Implemented** | `revise_change_request` RPC, [`tests/unit/state-machine.test.ts`](tests/unit/state-machine.test.ts) |
+| **FR-15** | Withdrawing pending proposals revokes token and locks request in terminal `withdrawn`. | **Implemented** | `withdraw_change_request` RPC, [`tests/unit/state-machine.test.ts`](tests/unit/state-machine.test.ts) |
+| **FR-16** | Re-issuing / regenerating approval token without incrementing version or altering draft. | **Implemented** | `regenerate_approval_token` RPC, [`app/actions/change-requests.ts`](app/actions/change-requests.ts) |
+| **FR-17** | Rollup metrics derived exclusively from approved version snapshots. | **Implemented** | [`lib/domain/impact.ts`](lib/domain/impact.ts), [`tests/unit/impact.test.ts`](tests/unit/impact.test.ts) |
+| **FR-18** | Workspace metrics grouped strictly by currency (no mixed-currency addition). | **Implemented** | `calculateWorkspaceRollup()` in [`lib/domain/impact.ts`](lib/domain/impact.ts) |
+| **FR-19** | Team member invitation workflow via 7-day token links and strict email matching. | **Implemented** | `workspace_invitations` table, [`app/actions/invitations.ts`](app/actions/invitations.ts) |
+| **FR-20** | Direct proposal email dispatch to client contact via Resend provider with rate limits. | **Implemented** | `proposal_emails` table, [`app/actions/proposal-emails.ts`](app/actions/proposal-emails.ts) |
+| **FR-21** | Audit activity log recording actor, entity, action, and sanitized metadata. | **Implemented** | `activity_logs` table, [`tests/integration/project-rollup-and-activity.test.ts`](tests/integration/project-rollup-and-activity.test.ts) |
+| **FR-22** | RFC 4180 compliant CSV export of approved project scope changes. | **Implemented** | [`app/api/projects/[projectId]/export-csv/route.ts`](app/api/projects/[projectId]/export-csv/route.ts) |
 | **FR-23** | Automated background email reminder scheduler for expiring links. | **Not implemented** | Out of scope for MVP; no background scheduler configured. |
 | **FR-24** | Automated online deposit payment collection via Stripe upon client approval. | **Not implemented** | Pricing plans are display-only launch hypotheses. |
 
@@ -100,13 +102,13 @@ By decoupling client approval from formal user accounts (using secure, time-limi
 
 | Req ID | Category | Requirement Specification | Compliance & Evidence |
 |---|---|---|---|
-| **NFR-01** | **Data Integrity** | Zero floating-point representation drift for monetary values. All amounts stored as integer minor units (`bigint`). | Validated by [`lib/domain/money.ts`](file:///c:/ScopeGuard/lib/domain/money.ts) and [`tests/unit/money.test.ts`](file:///c:/ScopeGuard/tests/unit/money.test.ts). |
-| **NFR-02** | **Security** | Row-Level Security (RLS) enabled on 100% of tables with default-deny configuration. | 13/13 tables verified in `supabase/migrations/` and [`tests/integration/rls.test.ts`](file:///c:/ScopeGuard/tests/integration/rls.test.ts). |
-| **NFR-03** | **Access Boundaries** | Service-role administrative key strictly restricted to server runtimes; throw if imported in browser. | Enforced by [`lib/env.ts`](file:///c:/ScopeGuard/lib/env.ts) (`typeof window !== "undefined"` check). |
-| **NFR-04** | **Token Security** | Approval tokens generated with 256 bits of cryptographically secure entropy. Never store raw tokens in database. | Verified by [`lib/server/tokens.ts`](file:///c:/ScopeGuard/lib/server/tokens.ts) and [`tests/unit/tokens.test.ts`](file:///c:/ScopeGuard/tests/unit/tokens.test.ts). |
-| **NFR-05** | **Rate Limiting** | Client approval portal protected against automated brute-force attacks via salted IP hash and token prefix throttling. | Verified in [`lib/server/rate-limit.ts`](file:///c:/ScopeGuard/lib/server/rate-limit.ts) and [`tests/unit/rate-limit.test.ts`](file:///c:/ScopeGuard/tests/unit/rate-limit.test.ts). |
-| **NFR-06** | **Responsiveness** | Fluid mobile layout supporting viewport widths down to 360px without horizontal scroll overflow. | Verified via Playwright Mobile Chrome audits in [`tests/e2e/accessibility.spec.ts`](file:///c:/ScopeGuard/tests/e2e/accessibility.spec.ts). |
-| **NFR-07** | **Accessibility** | Conform to WCAG 2.1 AA accessibility guidelines (contrast ratios, focus traps, screen reader landmarks). | Automated Axe-Core audit in [`tests/e2e/accessibility.spec.ts`](file:///c:/ScopeGuard/tests/e2e/accessibility.spec.ts) (10/10 checks passing). |
+| **NFR-01** | **Data Integrity** | Zero floating-point representation drift for monetary values. All amounts stored as integer minor units (`bigint`). | Validated by [`lib/domain/money.ts`](lib/domain/money.ts) and [`tests/unit/money.test.ts`](tests/unit/money.test.ts). |
+| **NFR-02** | **Security** | Row-Level Security (RLS) enabled on 100% of tables with default-deny configuration. | 13/13 tables verified in `supabase/migrations/` and [`tests/integration/rls.test.ts`](tests/integration/rls.test.ts). |
+| **NFR-03** | **Access Boundaries** | Service-role administrative key strictly restricted to server runtimes; throw if imported in browser. | Enforced by [`lib/env.ts`](lib/env.ts) (`typeof window !== "undefined"` check). |
+| **NFR-04** | **Token Security** | Approval tokens generated with 256 bits of cryptographically secure entropy. Never store raw tokens in database. | Verified by [`lib/server/tokens.ts`](lib/server/tokens.ts) and [`tests/unit/tokens.test.ts`](tests/unit/tokens.test.ts). |
+| **NFR-05** | **Rate Limiting** | Client approval portal protected against automated brute-force attacks via salted IP hash and token prefix throttling. | Verified in [`lib/server/rate-limit.ts`](lib/server/rate-limit.ts) and [`tests/unit/rate-limit.test.ts`](tests/unit/rate-limit.test.ts). |
+| **NFR-06** | **Responsiveness** | Fluid mobile layout supporting viewport widths down to 360px without horizontal scroll overflow. | Verified via Playwright Mobile Chrome audits in [`tests/e2e/accessibility.spec.ts`](tests/e2e/accessibility.spec.ts). |
+| **NFR-07** | **Accessibility** | Conform to WCAG 2.1 AA accessibility guidelines (contrast ratios, focus traps, screen reader landmarks). | Automated Axe-Core audit in [`tests/e2e/accessibility.spec.ts`](tests/e2e/accessibility.spec.ts) (10/10 checks passing). |
 | **NFR-08** | **Immutability** | Published change request versions and recorded approvals must be permanently locked against updates or deletion. | Enforced by Postgres trigger `tr_block_version_mutation` in Migration 2. |
 | **NFR-09** | **Privacy** | Sensitive metadata (raw client IP addresses, plaintext passwords, full emails in logs) must be sanitized or masked. | Salted SHA-256 IP hashing in `lib/server/rate-limit.ts`; email regex masking (`j***@example.com`) in audit logs. |
 
@@ -120,8 +122,8 @@ ScopeGuard is architected as a modular, three-tier cloud application deployed on
 ```mermaid
 flowchart TD
     subgraph ClientTiers ["Client Presentation Tier (Browser Runtimes)"]
-        AgencyClient["Agency User (Desktop & Mobile Web)<br>React 19, Tailwind CSS, React Hook Form, Motion"]
-        PublicClient["Client Approver (Mobile-First Web)<br>Token Bearer Link (/approve/[token]), Zero Auth"]
+        AgencyClient["Agency User (Desktop and Mobile Web)<br>React 19, Tailwind CSS, React Hook Form, Motion"]
+        PublicClient["Client Approver (Mobile-First Web)<br>Token Bearer Link (/approve/:token), Zero Auth"]
     end
 
     subgraph ServerlessTier ["Next.js 15 Application Server Tier (Vercel)"]
@@ -135,7 +137,7 @@ flowchart TD
     subgraph DomainTier ["Pure Business Domain Tier (lib/domain/*)"]
         MoneyDomain["money.ts<br>Minor Units Math, Half-Up Rounding"]
         ImpactDomain["impact.ts<br>Rollup Calculations, Currency Grouping"]
-        StateDomain["stateMachine.ts<br>State Invariants & Actor Guards"]
+        StateDomain["stateMachine.ts<br>State Invariants and Actor Guards"]
     end
 
     subgraph DatabaseTier ["Persistence Tier (Supabase PostgreSQL)"]
@@ -145,13 +147,13 @@ flowchart TD
         DataTables[("PostgreSQL Tables<br>workspaces, projects, versions, approvals, logs")]
     end
 
-    subgraph ThirdPartyTier ["External Infrastructure & Communication"]
+    subgraph ThirdPartyTier ["External Infrastructure and Communication"]
         SupabaseAuthEngine["Supabase Auth Service<br>User Sign In, Session JWTs, Email Tokens"]
-        ResendMailAPI["Resend Email Provider<br>Team Invitations & Client Proposals"]
+        ResendMailAPI["Resend Email Provider<br>Team Invitations and Client Proposals"]
     end
 
     AgencyClient -->|HTTPS / Session Cookies| EdgeMiddleware
-    PublicClient -->|GET /approve/[token]| EdgeMiddleware
+    PublicClient -->|GET /approve/:token| EdgeMiddleware
     EdgeMiddleware --> AppRouterSSR
 
     AgencyClient -->|Form Action POST| ServerActionsMutations
@@ -199,7 +201,7 @@ erDiagram
     PROFILES ||--o{ PROJECTS : "creates"
     PROFILES ||--o{ CHANGE_REQUESTS : "drafts"
     PROFILES ||--o{ CHANGE_REQUEST_VERSIONS : "publishes"
-    PROFILES ||--o{ WORKSPACE_INVITATIONS : "invites / accepts"
+    PROFILES ||--o{ WORKSPACE_INVITATIONS : "invites or accepts"
     PROFILES ||--o{ PROPOSAL_EMAILS : "sends"
 
     WORKSPACES ||--|{ WORKSPACE_MEMBERS : "contains"
@@ -217,7 +219,7 @@ erDiagram
     CHANGE_REQUESTS ||--o{ PROPOSAL_EMAILS : "dispatches"
 
     CHANGE_REQUEST_VERSIONS ||--o{ APPROVAL_TOKENS : "authorizes"
-    CHANGE_REQUEST_VERSIONS ||--o| APPROVALS : "decided by (1:1)"
+    CHANGE_REQUEST_VERSIONS ||--o| APPROVALS : "decided by"
     CHANGE_REQUEST_VERSIONS ||--o{ PROPOSAL_EMAILS : "transmits"
 
     PROFILES {
@@ -323,7 +325,7 @@ erDiagram
 
     APPROVALS {
         uuid id PK
-        uuid version_id FK,UK
+        uuid version_id FK
         decision_type decision
         timestamptz decided_at
         actor_type decision_actor_type
@@ -414,7 +416,7 @@ erDiagram
 1. **Signup & Onboarding:** Handled via Supabase Auth `signUp`. Passwords require at least 8 characters with lowercase, uppercase, number, and special character. User profile is auto-created. If unconfirmed, an honest prompt allows resending verification. First-time login forwards to `/onboarding` to provision the workspace.
 2. **Login & Session Refresh:** `loginAction` executes `signInWithPassword`. The `@supabase/ssr` middleware refreshes JWT cookies on every request.
 3. **Password Reset:** `forgotPasswordAction` dispatches recovery email. The callback exchanges the code, establishes a recovery session, and routes to `/reset-password` where `resetPasswordAction` executes `supabase.auth.updateUser`.
-4. **Open Redirect Mitigation:** Redirects read from query parameter `?next=` are validated through `getSafeRedirectUrl` ([`lib/validation/redirect.ts`](file:///c:/ScopeGuard/lib/validation/redirect.ts)), rejecting external domains and protocol-relative URLs (`//evil.com`).
+4. **Open Redirect Mitigation:** Redirects read from query parameter `?next=` are validated through `getSafeRedirectUrl` ([`lib/validation/redirect.ts`](lib/validation/redirect.ts)), rejecting external domains and protocol-relative URLs (`//evil.com`).
 
 ### 5.2 Authorization Role Matrix
 
@@ -465,7 +467,7 @@ sequenceDiagram
     Action->>Action: Convert budget to integer minor units
     Action->>DB: INSERT INTO projects (RLS verified)
     DB-->>Action: Returns project_id
-    Action-->>UI: Redirect to /projects/[projectId]
+    Action-->>UI: Redirect to /projects/:projectId
     Agency->>UI: Add Deliverables (Scope items)
     UI->>DB: INSERT INTO deliverables (project_id, title)
     DB-->>UI: Deliverables rendered in contract baseline
@@ -505,7 +507,7 @@ sequenceDiagram
     Mgr->>UI: Click "Publish Proposal"
     UI->>Action: Invoke publish action
     Action->>TokenGen: generateApprovalToken()
-    TokenGen-->>Action: { rawToken, tokenHash, expiresAt }
+    TokenGen-->>Action: Returns rawToken, tokenHash, expiresAt
     Action->>RPC: publish_change_request(requestId, tokenHash, expiresAt)
     Note over RPC,DB: Atomic Transaction with SELECT ... FOR UPDATE
     RPC->>DB: INSERT INTO change_request_versions (frozen snapshot JSONB)
@@ -513,7 +515,7 @@ sequenceDiagram
     RPC->>DB: UPDATE change_requests SET status = 'pending_approval'
     RPC->>DB: INSERT INTO activity_logs ('change_request_published')
     RPC-->>Action: Success payload
-    Action-->>UI: Return raw approval link (/approve/[token]) in modal
+    Action-->>UI: Return raw approval link (/approve/:token) in modal
     Note over UI: Raw link shown once; user can copy or email to client
 ```
 
@@ -522,7 +524,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor Client as External Client Stakeholder
-    participant Portal as /approve/[token] Page
+    participant Portal as Approval Portal
     participant ServiceClient as Service-Role Supabase Client
     participant RateLimiter as lib/server/rate-limit.ts
     participant RPC as submit_decision()
@@ -532,7 +534,7 @@ sequenceDiagram
     Portal->>ServiceClient: get_proposal_by_token(tokenHash)
     ServiceClient-->>Portal: Returns frozen snapshot (no internal notes)
     Client->>Portal: Reviews Contract Baseline vs Proposed Scope
-    Client->>Portal: Enters Full Legal Name & clicks "Approve Change"
+    Client->>Portal: Enters Full Legal Name and clicks "Approve Change"
     Portal->>RateLimiter: checkAndRecordApprovalAttempt(clientIp, tokenHash)
     RateLimiter-->>Portal: Allowed (under threshold)
     Portal->>RPC: submit_decision(tokenHash, 'approved', actorName)
@@ -544,21 +546,21 @@ sequenceDiagram
     RPC->>DB: UPDATE approval_tokens SET consumed_at = now()
     RPC->>DB: INSERT INTO activity_logs ('change_request_approved')
     RPC-->>Portal: Decision confirmed
-    Portal-->>Client: Render immutable Confirmation & Receipt
+    Portal-->>Client: Render immutable Confirmation and Receipt
 ```
 
 ### 6.5 Change Request State Transition Invariants
-The state machine enforced in [`lib/domain/stateMachine.ts`](file:///c:/ScopeGuard/lib/domain/stateMachine.ts) governs all lifecycle transitions:
+The state machine enforced in [`lib/domain/stateMachine.ts`](lib/domain/stateMachine.ts) governs all lifecycle transitions:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> draft : Member / Manager / Owner creates draft
-    draft --> draft : Member / Manager / Owner edits draft
-    draft --> pending_approval : Manager / Owner publishes (creates v_N, generates token)
+    [*] --> draft : Member or Manager or Owner creates draft
+    draft --> draft : Member or Manager or Owner edits draft
+    draft --> pending_approval : Manager or Owner publishes (creates snapshot, generates token)
 
-    pending_approval --> draft : Manager / Owner revises (token revoked, next publish = v_N+1)
-    pending_approval --> withdrawn : Manager / Owner withdraws (token revoked, terminal)
-    pending_approval --> pending_approval : Manager / Owner re-issues token (old token revoked)
+    pending_approval --> draft : Manager or Owner revises (token revoked, next publish is version N+1)
+    pending_approval --> withdrawn : Manager or Owner withdraws (token revoked, terminal)
+    pending_approval --> pending_approval : Manager or Owner re-issues token (old token revoked)
 
     pending_approval --> approved : Client via bearer token approves (terminal)
     pending_approval --> rejected : Client via bearer token rejects (terminal)
@@ -578,7 +580,9 @@ All monetary figures are stored in the database as integer minor units (e.g., pa
 ### 7.2 Hourly Pricing Formula & Rounding
 Hourly scope pricing calculates estimated cost by multiplying estimated hours by the default hourly rate in minor units, applying deterministic half-up rounding:
 
-$$\text{cost\_minor} = \left\lfloor (\text{hours} \times \text{rate\_minor}) + 0.5 \right\rfloor$$
+$$
+\text{cost\_minor} = \left\lfloor (\text{hours} \times \text{rate\_minor}) + 0.5 \right\rfloor
+$$
 
 ```typescript
 // Implemented in lib/domain/money.ts
@@ -610,15 +614,29 @@ export function calculateHourlyCost(hours: number, rateMinor: number): number {
 Financial totals roll up exclusively from immutable approved version snapshots:
 
 1. **Original Contract Budget:**
-   $$\text{original\_budget\_minor} = \text{projects.budget\_minor}$$
+$$
+\text{original\_budget\_minor} = \text{projects.budget\_minor}
+$$
+
 2. **Approved Additional Charges:**
-   $$\text{approved\_extra\_minor} = \sum_{v \in \text{approved\_versions}} v.\text{cost\_minor}$$
+$$
+\text{approved\_extra\_minor} = \sum_{v \in \text{approved\_versions}} v.\text{cost\_minor}
+$$
+
 3. **Revised Total Estimated Budget:**
-   $$\text{revised\_budget\_minor} = \text{original\_budget\_minor} + \text{approved\_extra\_minor}$$
+$$
+\text{revised\_budget\_minor} = \text{original\_budget\_minor} + \text{approved\_extra\_minor}
+$$
+
 4. **Revised Project Deadline:**
-   $$\text{revised\_deadline} = \max\left(\{\text{original\_deadline}\} \cup \{v.\text{proposed\_deadline} \mid v \in \text{approved\_versions} \land v.\text{proposed\_deadline} \ne \text{null}\}\right)$$
+$$
+\text{revised\_deadline} = \max\left(\{\text{original\_deadline}\} \cup \{v.\text{proposed\_deadline} \mid v \in \text{approved\_versions} \land v.\text{proposed\_deadline} \ne \text{null}\}\right)
+$$
+
 5. **Timeline Delta Days:**
-   $$\Delta\text{days} = \text{daysBetween}(\text{revised\_deadline}, \text{original\_deadline})$$
+$$
+\Delta\text{days} = \text{daysBetween}(\text{revised\_deadline}, \text{original\_deadline})
+$$
 
 ---
 
@@ -671,7 +689,7 @@ flowchart LR
     end
 
     AgencyUser -->|HTTPS| VercelCDN
-    ClientUser -->|HTTPS /approve/[token]| VercelCDN
+    ClientUser -->|HTTPS /approve/:token| VercelCDN
     VercelCDN --> VercelFunctions
 
     VercelFunctions -->|User JWT Cookie| SupabasePostgres
@@ -691,7 +709,7 @@ flowchart LR
 4. **Display-Only Pricing Tiers:** Subscription plans (`Free`, `Pro`, `Agency`) are non-functional launch hypotheses without an integrated Stripe billing engine.
 
 ### 10.2 Future Scope & Roadmap
-- **Roadmap P1:** Two-factor client email OTP verification before granting access to `/approve/[token]`.
+- **Roadmap P1:** Two-factor client email OTP verification before granting access to `/approve/:token`.
 - **Roadmap P1:** Automated background email notifications for pending proposals approaching their 14-day expiry.
 - **Roadmap P2:** Stripe Checkout integration allowing agencies to require upfront deposit payments before scope approval is finalized.
 - **Roadmap P2:** Webhook dispatchers sending real-time approval events into Slack channels, Linear tickets, or Jira backlogs.
@@ -710,12 +728,12 @@ All core functional and non-functional requirements have been validated through 
 ## 12. References & Appendix
 
 ### 12.1 Technical References
-1. **Next.js 15 Documentation:** Vercel App Router Architecture. [`https://nextjs.org/docs`](https://nextjs.org/docs)
-2. **Supabase Documentation:** Row-Level Security, Database Functions & SSR Auth. [`https://supabase.com/docs`](https://supabase.com/docs)
-3. **PostgreSQL Documentation:** Concurrency Control, Explicit Locking, and Triggers. [`https://www.postgresql.org/docs/current/explicit-locking.html`](https://www.postgresql.org/docs/current/explicit-locking.html)
-4. **Zod Documentation:** TypeScript-First Schema Validation. [`https://zod.dev/`](https://zod.dev/)
-5. **Resend API Reference:** Transactional Email Service. [`https://resend.com/docs/api-reference/introduction`](https://resend.com/docs/api-reference/introduction)
-6. **Tailwind CSS Documentation:** Utility-First CSS Framework. [`https://tailwindcss.com/docs`](https://tailwindcss.com/docs)
+1. **Next.js 15 Documentation:** Vercel App Router Architecture. [https://nextjs.org/docs](https://nextjs.org/docs)
+2. **Supabase Documentation:** Row-Level Security, Database Functions & SSR Auth. [https://supabase.com/docs](https://supabase.com/docs)
+3. **PostgreSQL Documentation:** Concurrency Control, Explicit Locking, and Triggers. [https://www.postgresql.org/docs/current/explicit-locking.html](https://www.postgresql.org/docs/current/explicit-locking.html)
+4. **Zod Documentation:** TypeScript-First Schema Validation. [https://zod.dev/](https://zod.dev/)
+5. **Resend API Reference:** Transactional Email Service. [https://resend.com/docs/api-reference/introduction](https://resend.com/docs/api-reference/introduction)
+6. **Tailwind CSS Documentation:** Utility-First CSS Framework. [https://tailwindcss.com/docs](https://tailwindcss.com/docs)
 
 ### 12.2 Academic & Project Glossary
 - **CSPRNG:** Cryptographically Secure Pseudorandom Number Generator (`crypto.randomBytes`).

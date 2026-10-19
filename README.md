@@ -29,9 +29,9 @@ The table below classifies the current implementation status of all features bas
 |---|---|:---:|---|
 | **Multi-Tenant Workspaces** | Core Identity | **Implemented** | Supabase Auth, profiles auto-creation trigger, `workspaces`, `workspace_members`, `create_workspace` RPC. |
 | **Hierarchical Roles (`owner`, `manager`, `member`)** | Authorization | **Implemented** | RLS policies on all 13 tables, `workspace_role()` helper, and server action `requireRole` guards. |
-| **Projects & Deliverables Management** | Commercial Baseline | **Implemented** | Full CRUD in [`app/actions/projects.ts`](file:///c:/ScopeGuard/app/actions/projects.ts) and [`deliverables.ts`](file:///c:/ScopeGuard/app/actions/deliverables.ts). Integer minor budget storage. |
+| **Projects & Deliverables Management** | Commercial Baseline | **Implemented** | Full CRUD in [`app/actions/projects.ts`](app/actions/projects.ts) and [`deliverables.ts`](app/actions/deliverables.ts). Integer minor budget storage. |
 | **Change Request Drafting** | Scoping Engine | **Implemented** | Hourly (hours $\times$ rate) and fixed fees, deliverable linking, proposed deadlines, private internal notes. |
-| **Pure Domain Calculation Engine** | Financial Math | **Implemented** | Pure functions in [`lib/domain/money.ts`](file:///c:/ScopeGuard/lib/domain/money.ts) and [`impact.ts`](file:///c:/ScopeGuard/lib/domain/impact.ts). Deterministic half-up rounding (`floor(hours * rate + 0.5)`). |
+| **Pure Domain Calculation Engine** | Financial Math | **Implemented** | Pure functions in [`lib/domain/money.ts`](lib/domain/money.ts) and [`impact.ts`](lib/domain/impact.ts). Deterministic half-up rounding (`floor(hours * rate + 0.5)`). |
 | **Multi-Currency Isolation** | Financial Math | **Implemented** | Strict currency isolation per project. Workspace rollups grouped strictly by currency without cross-currency summation. |
 | **Immutable Version Snapshots** | Version Control | **Implemented** | `change_request_versions` table with database trigger `tr_block_version_mutation` blocking UPDATE and DELETE. |
 | **Cryptographic Token Hashing** | Security | **Implemented** | 256-bit CSPRNG tokens (`crypto.randomBytes(32)` base64url). Raw token exists in memory only; database stores SHA-256 hash. |
@@ -56,7 +56,7 @@ The table below classifies the current implementation status of all features bas
 
 ## 3. Technology Stack
 
-Derived directly from [`package.json`](file:///c:/ScopeGuard/package.json):
+Derived directly from [`package.json`](package.json):
 
 | Layer | Package / Tool | Exact Version | Description |
 |---|---|---|---|
@@ -121,7 +121,7 @@ flowchart TD
     AgencyUser -->|HTTPS & Session Cookies| Middleware
     Middleware --> ServerComponents
     AgencyUser -->|Server Action Mutations| ServerActions
-    ClientUser -->|GET /approve/[token]| ServerComponents
+    ClientUser -->|GET /approve/:token| ServerComponents
     ClientUser -->|Submit Decision Action| ServerActions
 
     ServerActions --> DomainLogic
@@ -206,7 +206,7 @@ The application utilizes the following environment variables:
 
 ## 7. Development & Quality Commands
 
-Only commands defined in [`package.json`](file:///c:/ScopeGuard/package.json) are supported:
+Only commands defined in [`package.json`](package.json) are supported:
 
 ```bash
 # Run local development server

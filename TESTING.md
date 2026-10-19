@@ -32,7 +32,7 @@ flowchart TD
 ```
 
 1. **Static Analysis (Tier 1):** ESLint enforces Next.js App Router conventions. TypeScript 5.7 compiler validates all types, nullability, and database interface mappings without code emission.
-2. **Pure Unit Testing (Tier 2):** Tests framework-free domain calculations in [`lib/domain/`](file:///c:/ScopeGuard/lib/domain/). These tests execute instantaneously in memory with zero external dependencies.
+2. **Pure Unit Testing (Tier 2):** Tests framework-free domain calculations in [`lib/domain/`](lib/domain/). These tests execute instantaneously in memory with zero external dependencies.
 3. **Database Integration & RLS Testing (Tier 3):** Uses `@electric-sql/pglite` (real WASM-compiled PostgreSQL 15 in Node.js) to apply all SQL migrations, create test roles (`owner`, `manager`, `member`, `anon`), and verify that Row-Level Security (RLS) blocks unauthorized access.
 4. **End-to-End & Accessibility Testing (Tier 4):** Playwright executes real browser sessions across Desktop (1280px) and Mobile (360px) viewports. `@axe-core/playwright` runs automated accessibility audits checking WCAG AA compliance.
 
@@ -113,58 +113,58 @@ flowchart TD
 
 | Test File | Tests | Domain / Subject Covered | Status |
 |---|:---:|---|:---:|
-| [`tests/unit/money.test.ts`](file:///c:/ScopeGuard/tests/unit/money.test.ts) | 21 | Integer minor parsing, decimal conversion, half-up rounding (`floor(hours * rate + 0.5)`), currency formatting. | **Passed** |
-| [`tests/unit/state-machine.test.ts`](file:///c:/ScopeGuard/tests/unit/state-machine.test.ts) | 26 | All 25 valid/illegal state transitions across `owner`, `manager`, `member`, and `client_link`. | **Passed** |
-| [`tests/unit/impact.test.ts`](file:///c:/ScopeGuard/tests/unit/impact.test.ts) | 18 | Change request impact, timeline delta days calculation, project financial rollups, multi-currency isolation. | **Passed** |
-| [`tests/unit/validation-domain.test.ts`](file:///c:/ScopeGuard/tests/unit/validation-domain.test.ts) | 31 | Zod validation for project creation, deliverables, pricing methods, and change requests. | **Passed** |
-| [`tests/unit/validation-auth.test.ts`](file:///c:/ScopeGuard/tests/unit/validation-auth.test.ts) | 16 | Password strength rules (length, uppercase, lowercase, special char), email syntax normalization. | **Passed** |
-| [`tests/unit/tokens.test.ts`](file:///c:/ScopeGuard/tests/unit/tokens.test.ts) | 4 | 256-bit entropy token generation, URL-safe base64 encoding, SHA-256 hash length (64 chars). | **Passed** |
-| [`tests/unit/rate-limit.test.ts`](file:///c:/ScopeGuard/tests/unit/rate-limit.test.ts) | 5 | In-memory sliding window rate limiter, IP salting and hashing, token prefix grouping. | **Passed** |
-| [`tests/unit/invitations-validation.test.ts`](file:///c:/ScopeGuard/tests/unit/invitations-validation.test.ts) | 19 | Validation schemas for team invitations, role restrictions, and batch email arrays. | **Passed** |
-| [`tests/unit/invitations-fallback.test.ts`](file:///c:/ScopeGuard/tests/unit/invitations-fallback.test.ts) | 6 | In-memory fallback invitation store behavior when remote database tables are unmigrated. | **Passed** |
-| [`tests/unit/proposal-email-validation.test.ts`](file:///c:/ScopeGuard/tests/unit/proposal-email-validation.test.ts) | 15 | Validation for proposal email dispatches, client contacts, and personal note limits. | **Passed** |
-| [`tests/unit/proposal-emails-fallback.test.ts`](file:///c:/ScopeGuard/tests/unit/proposal-emails-fallback.test.ts) | 7 | In-memory proposal email log fallback when remote database tables are unmigrated. | **Passed** |
-| [`tests/unit/projects.test.ts`](file:///c:/ScopeGuard/tests/unit/projects.test.ts) | 13 | Project domain rules, date sequence checks (`deadline >= start_date`), and budget limits. | **Passed** |
-| [`tests/unit/export-csv.test.ts`](file:///c:/ScopeGuard/tests/unit/export-csv.test.ts) | 6 | RFC 4180 CSV export generation, column formatting, and escape handling. | **Passed** |
-| [`tests/unit/auth-context.test.ts`](file:///c:/ScopeGuard/tests/unit/auth-context.test.ts) | 17 | Workspace membership resolution and role hierarchy evaluation. | **Passed** |
-| [`tests/unit/auth-classification.test.ts`](file:///c:/ScopeGuard/tests/unit/auth-classification.test.ts) | 11 | Error classification for Supabase auth error codes. | **Passed** |
-| [`tests/unit/change-requests-action.test.ts`](file:///c:/ScopeGuard/tests/unit/change-requests-action.test.ts) | 11 | Action input parsing and sanitization for draft mutations. | **Passed** |
-| [`tests/unit/redirect.test.ts`](file:///c:/ScopeGuard/tests/unit/redirect.test.ts) | 8 | Open redirect defense: validates internal paths and blocks external domains. | **Passed** |
-| [`tests/unit/env.test.ts`](file:///c:/ScopeGuard/tests/unit/env.test.ts) | 3 | Zod validation for public and server-only environment variable configurations. | **Passed** |
-| [`tests/unit/landing-page.test.tsx`](file:///c:/ScopeGuard/tests/unit/landing-page.test.tsx) | 10 | React component test verifying landing page hero, pricing cards, and FAQ items. | **Passed** |
-| [`tests/unit/smoke.test.ts`](file:///c:/ScopeGuard/tests/unit/smoke.test.ts) | 2 | Vitest test runner sanity verification. | **Passed** |
+| [`tests/unit/money.test.ts`](tests/unit/money.test.ts) | 21 | Integer minor parsing, decimal conversion, half-up rounding (`floor(hours * rate + 0.5)`), currency formatting. | **Passed** |
+| [`tests/unit/state-machine.test.ts`](tests/unit/state-machine.test.ts) | 26 | All 25 valid/illegal state transitions across `owner`, `manager`, `member`, and `client_link`. | **Passed** |
+| [`tests/unit/impact.test.ts`](tests/unit/impact.test.ts) | 18 | Change request impact, timeline delta days calculation, project financial rollups, multi-currency isolation. | **Passed** |
+| [`tests/unit/validation-domain.test.ts`](tests/unit/validation-domain.test.ts) | 31 | Zod validation for project creation, deliverables, pricing methods, and change requests. | **Passed** |
+| [`tests/unit/validation-auth.test.ts`](tests/unit/validation-auth.test.ts) | 16 | Password strength rules (length, uppercase, lowercase, special char), email syntax normalization. | **Passed** |
+| [`tests/unit/tokens.test.ts`](tests/unit/tokens.test.ts) | 4 | 256-bit entropy token generation, URL-safe base64 encoding, SHA-256 hash length (64 chars). | **Passed** |
+| [`tests/unit/rate-limit.test.ts`](tests/unit/rate-limit.test.ts) | 5 | In-memory sliding window rate limiter, IP salting and hashing, token prefix grouping. | **Passed** |
+| [`tests/unit/invitations-validation.test.ts`](tests/unit/invitations-validation.test.ts) | 19 | Validation schemas for team invitations, role restrictions, and batch email arrays. | **Passed** |
+| [`tests/unit/invitations-fallback.test.ts`](tests/unit/invitations-fallback.test.ts) | 6 | In-memory fallback invitation store behavior when remote database tables are unmigrated. | **Passed** |
+| [`tests/unit/proposal-email-validation.test.ts`](tests/unit/proposal-email-validation.test.ts) | 15 | Validation for proposal email dispatches, client contacts, and personal note limits. | **Passed** |
+| [`tests/unit/proposal-emails-fallback.test.ts`](tests/unit/proposal-emails-fallback.test.ts) | 7 | In-memory proposal email log fallback when remote database tables are unmigrated. | **Passed** |
+| [`tests/unit/projects.test.ts`](tests/unit/projects.test.ts) | 13 | Project domain rules, date sequence checks (`deadline >= start_date`), and budget limits. | **Passed** |
+| [`tests/unit/export-csv.test.ts`](tests/unit/export-csv.test.ts) | 6 | RFC 4180 CSV export generation, column formatting, and escape handling. | **Passed** |
+| [`tests/unit/auth-context.test.ts`](tests/unit/auth-context.test.ts) | 17 | Workspace membership resolution and role hierarchy evaluation. | **Passed** |
+| [`tests/unit/auth-classification.test.ts`](tests/unit/auth-classification.test.ts) | 11 | Error classification for Supabase auth error codes. | **Passed** |
+| [`tests/unit/change-requests-action.test.ts`](tests/unit/change-requests-action.test.ts) | 11 | Action input parsing and sanitization for draft mutations. | **Passed** |
+| [`tests/unit/redirect.test.ts`](tests/unit/redirect.test.ts) | 8 | Open redirect defense: validates internal paths and blocks external domains. | **Passed** |
+| [`tests/unit/env.test.ts`](tests/unit/env.test.ts) | 3 | Zod validation for public and server-only environment variable configurations. | **Passed** |
+| [`tests/unit/landing-page.test.tsx`](tests/unit/landing-page.test.tsx) | 10 | React component test verifying landing page hero, pricing cards, and FAQ items. | **Passed** |
+| [`tests/unit/smoke.test.ts`](tests/unit/smoke.test.ts) | 2 | Vitest test runner sanity verification. | **Passed** |
 
 ### 3.2 Integration & Database Test Suites (11 Files in `tests/integration/`)
 
 | Test File | Tests | Implementation & Coverage | Status |
 |---|:---:|---|:---:|
-| [`tests/integration/rls.test.ts`](file:///c:/ScopeGuard/tests/integration/rls.test.ts) | 28 | Comprehensive PostgreSQL RLS verification using PGlite. Tests 2 workspaces and 3 user roles across tables. | **Passed** |
-| [`tests/integration/migrations.test.ts`](file:///c:/ScopeGuard/tests/integration/migrations.test.ts) | 8 | Executes Migrations 1 and 2 in an isolated in-memory Postgres instance; verifies schema creation. | **Passed** |
-| [`tests/integration/invitations-migration.test.ts`](file:///c:/ScopeGuard/tests/integration/invitations-migration.test.ts) | 13 | Applies Migration 4; verifies `workspace_invitations` table, triggers, and stored procedures. | **Passed** |
-| [`tests/integration/proposal-emails-migration.test.ts`](file:///c:/ScopeGuard/tests/integration/proposal-emails-migration.test.ts) | 12 | Applies Migration 5; verifies `proposal_emails` table, RLS, and rate limiting procedures. | **Passed** |
-| [`tests/integration/proposal-email-actions.test.ts`](file:///c:/ScopeGuard/tests/integration/proposal-email-actions.test.ts) | 10 | Server action tests verifying rate limits (5/hr), 60s cooldowns, and dual send modes. | **Passed** |
-| [`tests/integration/change-requests.test.ts`](file:///c:/ScopeGuard/tests/integration/change-requests.test.ts) | 4 | Draft creation, deliverable association, internal notes isolation, and draft deletion. | **Passed** |
-| [`tests/integration/change-requests-workflow.test.ts`](file:///c:/ScopeGuard/tests/integration/change-requests-workflow.test.ts) | 3 | Full change request lifecycle: draft -> publish -> revise -> republish ($v_1 \to v_2$). | **Passed** |
-| [`tests/integration/approval-concurrency.test.ts`](file:///c:/ScopeGuard/tests/integration/approval-concurrency.test.ts) | 3 | Concurrent decision race condition tests; verifies `SELECT ... FOR UPDATE` row locks prevent double approval. | **Passed** |
-| [`tests/integration/dashboard.test.ts`](file:///c:/ScopeGuard/tests/integration/dashboard.test.ts) | 5 | Workspace dashboard aggregation across multiple projects and heterogeneous currencies. | **Passed** |
-| [`tests/integration/project-rollup-and-activity.test.ts`](file:///c:/ScopeGuard/tests/integration/project-rollup-and-activity.test.ts) | 6 | Project rollup metrics verified against generated audit activity log records. | **Passed** |
-| [`tests/integration/projects-deliverables.test.ts`](file:///c:/ScopeGuard/tests/integration/projects-deliverables.test.ts) | 4 | Project and deliverable relational cascading and status lifecycle updates. | **Passed** |
+| [`tests/integration/rls.test.ts`](tests/integration/rls.test.ts) | 28 | Comprehensive PostgreSQL RLS verification using PGlite. Tests 2 workspaces and 3 user roles across tables. | **Passed** |
+| [`tests/integration/migrations.test.ts`](tests/integration/migrations.test.ts) | 8 | Executes Migrations 1 and 2 in an isolated in-memory Postgres instance; verifies schema creation. | **Passed** |
+| [`tests/integration/invitations-migration.test.ts`](tests/integration/invitations-migration.test.ts) | 13 | Applies Migration 4; verifies `workspace_invitations` table, triggers, and stored procedures. | **Passed** |
+| [`tests/integration/proposal-emails-migration.test.ts`](tests/integration/proposal-emails-migration.test.ts) | 12 | Applies Migration 5; verifies `proposal_emails` table, RLS, and rate limiting procedures. | **Passed** |
+| [`tests/integration/proposal-email-actions.test.ts`](tests/integration/proposal-email-actions.test.ts) | 10 | Server action tests verifying rate limits (5/hr), 60s cooldowns, and dual send modes. | **Passed** |
+| [`tests/integration/change-requests.test.ts`](tests/integration/change-requests.test.ts) | 4 | Draft creation, deliverable association, internal notes isolation, and draft deletion. | **Passed** |
+| [`tests/integration/change-requests-workflow.test.ts`](tests/integration/change-requests-workflow.test.ts) | 3 | Full change request lifecycle: draft -> publish -> revise -> republish ($v_1 \to v_2$). | **Passed** |
+| [`tests/integration/approval-concurrency.test.ts`](tests/integration/approval-concurrency.test.ts) | 3 | Concurrent decision race condition tests; verifies `SELECT ... FOR UPDATE` row locks prevent double approval. | **Passed** |
+| [`tests/integration/dashboard.test.ts`](tests/integration/dashboard.test.ts) | 5 | Workspace dashboard aggregation across multiple projects and heterogeneous currencies. | **Passed** |
+| [`tests/integration/project-rollup-and-activity.test.ts`](tests/integration/project-rollup-and-activity.test.ts) | 6 | Project rollup metrics verified against generated audit activity log records. | **Passed** |
+| [`tests/integration/projects-deliverables.test.ts`](tests/integration/projects-deliverables.test.ts) | 4 | Project and deliverable relational cascading and status lifecycle updates. | **Passed** |
 
 ### 3.3 End-to-End Test Suites (11 Files in `tests/e2e/`)
 
 | Test File | Purpose & Flow Covered | Execution Status in Session |
 |---|---|---|
-| [`tests/e2e/accessibility.spec.ts`](file:///c:/ScopeGuard/tests/e2e/accessibility.spec.ts) | Automated WCAG AA accessibility audit via Axe-Core across all public auth and info views. | **10 / 10 Passed** (Desktop & Mobile) |
-| [`tests/e2e/components.spec.ts`](file:///c:/ScopeGuard/tests/e2e/components.spec.ts) | Verifies internal UI component gallery returns 404 in production builds. | **2 / 2 Passed** |
-| [`tests/e2e/smoke.spec.ts`](file:///c:/ScopeGuard/tests/e2e/smoke.spec.ts) | Validates server startup, asset loading, and landing page rendering. | **2 / 2 Passed** |
-| [`tests/e2e/landing-page.spec.ts`](file:///c:/ScopeGuard/tests/e2e/landing-page.spec.ts) | Landing page layout, responsive design, interactive demo workflow. | **4 Passed, 2 Failed** *(Known issue: selector `#client-name-input` mismatch after UI upgrade)* |
-| [`tests/e2e/auth-flow.spec.ts`](file:///c:/ScopeGuard/tests/e2e/auth-flow.spec.ts) | Authentication flow, session persistence, route protection redirects. | **2 Passed, 2 Failed** *(Timeout waiting for redirect to `/dashboard` due to unconfirmed email)* |
-| [`tests/e2e/projects.spec.ts`](file:///c:/ScopeGuard/tests/e2e/projects.spec.ts) | Project creation, settings updates, deliverables management. | *Not run in this session: requires pre-authenticated Supabase test user on local port 3001* |
-| [`tests/e2e/change-requests.spec.ts`](file:///c:/ScopeGuard/tests/e2e/change-requests.spec.ts) | Change request creation, deliverable linking, and draft editing. | *Not run in this session: requires pre-seeded workspace session* |
-| [`tests/e2e/change-requests-workflow.spec.ts`](file:///c:/ScopeGuard/tests/e2e/change-requests-workflow.spec.ts) | Draft publishing, token generation, link copy modal. | *Not run in this session: requires active project state* |
-| [`tests/e2e/client-approval.spec.ts`](file:///c:/ScopeGuard/tests/e2e/client-approval.spec.ts) | Client review portal (`/approve/[token]`), approve and reject flows. | *Not run in this session: requires published proposal token fixture* |
-| [`tests/e2e/full-journey.spec.ts`](file:///c:/ScopeGuard/tests/e2e/full-journey.spec.ts) | Multi-context user journey from agency setup to client mobile approval. | *Not run in this session: requires full multi-actor test harness* |
-| [`tests/e2e/multi-tenant-isolation.spec.ts`](file:///c:/ScopeGuard/tests/e2e/multi-tenant-isolation.spec.ts) | Verifies two separate workspaces cannot read or access each other's data. | *Not run in this session: requires multi-tenant test seeds* |
+| [`tests/e2e/accessibility.spec.ts`](tests/e2e/accessibility.spec.ts) | Automated WCAG AA accessibility audit via Axe-Core across all public auth and info views. | **10 / 10 Passed** (Desktop & Mobile) |
+| [`tests/e2e/components.spec.ts`](tests/e2e/components.spec.ts) | Verifies internal UI component gallery returns 404 in production builds. | **2 / 2 Passed** |
+| [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts) | Validates server startup, asset loading, and landing page rendering. | **2 / 2 Passed** |
+| [`tests/e2e/landing-page.spec.ts`](tests/e2e/landing-page.spec.ts) | Landing page layout, responsive design, interactive demo workflow. | **4 Passed, 2 Failed** *(Known issue: selector `#client-name-input` mismatch after UI upgrade)* |
+| [`tests/e2e/auth-flow.spec.ts`](tests/e2e/auth-flow.spec.ts) | Authentication flow, session persistence, route protection redirects. | **2 Passed, 2 Failed** *(Timeout waiting for redirect to `/dashboard` due to unconfirmed email)* |
+| [`tests/e2e/projects.spec.ts`](tests/e2e/projects.spec.ts) | Project creation, settings updates, deliverables management. | *Not run in this session: requires pre-authenticated Supabase test user on local port 3001* |
+| [`tests/e2e/change-requests.spec.ts`](tests/e2e/change-requests.spec.ts) | Change request creation, deliverable linking, and draft editing. | *Not run in this session: requires pre-seeded workspace session* |
+| [`tests/e2e/change-requests-workflow.spec.ts`](tests/e2e/change-requests-workflow.spec.ts) | Draft publishing, token generation, link copy modal. | *Not run in this session: requires active project state* |
+| [`tests/e2e/client-approval.spec.ts`](tests/e2e/client-approval.spec.ts) | Client review portal (`/approve/[token]`), approve and reject flows. | *Not run in this session: requires published proposal token fixture* |
+| [`tests/e2e/full-journey.spec.ts`](tests/e2e/full-journey.spec.ts) | Multi-context user journey from agency setup to client mobile approval. | *Not run in this session: requires full multi-actor test harness* |
+| [`tests/e2e/multi-tenant-isolation.spec.ts`](tests/e2e/multi-tenant-isolation.spec.ts) | Verifies two separate workspaces cannot read or access each other's data. | *Not run in this session: requires multi-tenant test seeds* |
 
 ---
 
